@@ -22,6 +22,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
 
         private static float _hideAt;
         private static bool _shown;
+        private static bool _gameFullyLoaded = false;
         static readonly HashSet<BgmID> _shownThisSession = new();
 
         public static void Postfix()
@@ -29,11 +30,42 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
             try
             {
                 if (!Plugin.EnableBgmInfo.Value) return;
+                if (GameManager.Instance == null) return;
+
+                if (!_gameFullyLoaded)
+                {
+                    // More robust game state checking
+                    if (GameManager.Instance == null) return;
+
+                    // Wait for scene to be properly loaded
+                    if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().isLoaded)
+                    {
+                        _gameFullyLoaded = true;
+                        Plugin.Logger.LogInfo("Game fully loaded, BGM patch activated");
+                    }
+                    else
+                    {
+                        return; // Still loading
+                    }
+                }
 
                 if (_ctrl == null)
                 {
-                    _ctrl = Object.FindObjectOfType<UICaptionController>();
-                    if (_ctrl == null) return;
+                    try
+                    {
+                        _ctrl = Object.FindObjectOfType<UICaptionController>();
+                        if (_ctrl == null)
+                        {
+                            // Don't spam logs, just return quietly
+                            return;
+                        }
+                        Plugin.Logger.LogInfo("UICaptionController found and cached");
+                    }
+                    catch (Exception ex)
+                    {
+                        Plugin.Logger.LogWarning($"Could not find UICaptionController: {ex.Message}");
+                        return;
+                    }
                 }
 
                 var id = GameSoundManager.CurrentBgmID;
@@ -50,6 +82,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
 
                     var meta = BgmNameLoader.Get((int)id);
                     string title = meta?.title ?? GameSoundManager.GetBgmName(id, out _);
+
 
                     if (string.IsNullOrEmpty(title) || title.Contains("Unknown")) return;
 
@@ -89,6 +122,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                     string msgTitle = $"♪ [{ostType} OST] {title}";
 
                     _ctrl.ShowCaption(msgTitle, pos, _msgRoot + "Title");
+                    SetTextAlignment(_msgRoot + "Title", alignment);
 
                     if (meta != null)
                     {
@@ -97,6 +131,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                         string album = meta.album ?? "";
                         string details = $"<size=60%>Track {track:D2}, {composer}, {album}</size>";
                         _ctrl.ShowCaption(details, pos + new Vector2(0, -35), _msgRoot + "Details");
+                        SetTextAlignment(_msgRoot + "Details", alignment);
                     }
 
                     _hideAt = Time.time + _duration;
@@ -116,7 +151,30 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
             catch (Exception ex)
             {
                 Plugin.Logger.LogError($"Exception in BgmCaptionPatch: {ex}");
+                _ctrl = null;
             }
+        }
+        private static void SetTextAlignment(string messageID, TextAnchor alignment)
+        {
+            var selectorField = typeof(UICaptionController)
+                .GetField("captionSelector", global::System.Reflection.BindingFlags.NonPublic | global::System.Reflection.BindingFlags.Instance);
+            if (selectorField == null) return;
+            var selector = selectorField.GetValue(_ctrl);
+            if (selector == null) return;
+
+            var dictField = selector.GetType()
+                .GetField("showCaptionDictionary",global::System.Reflection.BindingFlags.NonPublic | global::System.Reflection.BindingFlags.Instance);
+            if (dictField == null) return;
+            var dict = dictField.GetValue(selector) as global::System.Collections.IDictionary;
+            if (dict == null) return;
+
+            if (!dict.Contains(messageID)) return;
+            var presenter = dict[messageID] as Component;
+            if (presenter == null) return;
+
+            var txt = presenter.GetComponentInChildren<Text>();
+            if (txt != null)
+                txt.alignment = alignment;
         }
     }
 }

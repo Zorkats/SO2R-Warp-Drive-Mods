@@ -5,25 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2a1faf3c-e667-424c-93c7-12cce10ab00c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.SO2R-Warp-Drive-Mods/.idea/indexLayout.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.SO2R-Warp-Drive-Mods/.idea/projectSettingsUpdater.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.SO2R-Warp-Drive-Mods/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.SO2R-Warp-Drive-Mods/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Patches/Gameplay/BetterEncounters.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Patches/Gameplay/MovementandFieldEncounter.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Patches/System/BattleStatePatches.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Patches/System/OnUpdate.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Patches/System/PauseOnFocusLossPatch.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Patches/UI/BGMInfo.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Patches/UI/BgmNameLoader.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Patches/UI/Portrait.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/SO2R-Warp-Drive-Mods.csproj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/SO2R-Warp-Drive-Mods.sln" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bin/Debug/netstandard2.1/SO2R-Warp-Drive-Mods.deps.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/bin/Debug/netstandard2.1/SO2R-Warp-Drive-Mods.dll" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/global.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/main.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.SO2R-Warp-Drive-Mods/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.SO2R-Warp-Drive-Mods/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Patches/Gameplay/BetterEncounters.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/Gameplay/BetterEncounters.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Patches/System/BattleStatePatches.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/System/BattleStatePatches.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Patches/System/OnUpdate.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/System/OnUpdate.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Patches/UI/BGMInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/UI/BGMInfo.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/Debug/netstandard2.1/SO2R-Warp-Drive-Mods.deps.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/Debug/netstandard2.1/SO2R-Warp-Drive-Mods.dll" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,6 +50,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/d8/4104d19d/BattleStateMachine.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/fa/4b43437d/UICaptionPresenter.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
+  <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 3
 }</component>
@@ -119,13 +109,14 @@
       <workItem from="1750280779328" duration="505000" />
       <workItem from="1750281301214" duration="1306000" />
       <workItem from="1750282856477" duration="27000" />
-      <workItem from="1750282949241" duration="316000" />
+      <workItem from="1750282949241" duration="2074000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="UnityCheckinConfiguration" checkUnsavedScenes="true" />
   <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
   <component name="UnityProjectDiscoverer">
     <option name="hasUnityReference" value="true" />

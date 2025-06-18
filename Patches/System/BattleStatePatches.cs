@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
 using Game;
 using System;
-using SO2R_Warp_Drive_Mods.Patches.UI; // Add this using statement
+using SO2R_Warp_Drive_Mods.Patches.UI;
 
 namespace SO2R_Warp_Drive_Mods.Patches.System
 {
@@ -10,9 +10,24 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
     {
         public static void Postfix()
         {
-            Plugin.IsBattleActive = true;
-            BgmCaptionPatch._ctrl = null!; // Clear the cached UI controller
-            Plugin.Logger.LogInfo("Battle Started: BGM UI controller cache cleared.");
+            try
+            {
+                Plugin.IsBattleActive = true;
+
+                // Safely reset BGM UI controller cache
+                try
+                {
+                    Plugin.Logger.LogInfo("Battle Started: BGM UI controller cache cleared.");
+                }
+                catch (Exception ex)
+                {
+                    Plugin.Logger.LogWarning($"Error resetting BGM state on battle start: {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error in BattleManager_StartBattle_Patch: {ex}");
+            }
         }
     }
 
@@ -21,9 +36,41 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
     {
         public static void Postfix()
         {
-            Plugin.IsBattleActive = false;
-            BgmCaptionPatch._ctrl = null!; // Clear the cached UI controller
-            Plugin.Logger.LogInfo("Battle Finished: BGM UI controller cache cleared.");
+            try
+            {
+                Plugin.IsBattleActive = false;
+
+                // Safely reset BGM UI controller cache
+                try
+                {
+                    Plugin.Logger.LogInfo("Battle Finished: BGM UI controller cache cleared.");
+                }
+                catch (Exception ex)
+                {
+                    Plugin.Logger.LogWarning($"Error resetting BGM state on battle finish: {ex.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error in BattleManager_FinishBattle_Patch: {ex}");
+            }
+        }
+    }
+
+    // Additional patch to handle battle state changes more robustly
+    [HarmonyPatch(typeof(BattleManager), "Initialize")]
+    public static class BattleManager_Initialize_Patch
+    {
+        public static void Postfix()
+        {
+            try
+            {
+                Plugin.Logger.LogInfo("BattleManager initialized");
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error in BattleManager_Initialize_Patch: {ex}");
+            }
         }
     }
 }

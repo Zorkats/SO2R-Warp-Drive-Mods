@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SO2R-Warp-Drive-Mods", "SO2R-Warp-Drive-Mods.csproj", "{ADF34719-998D-429F-8240-7F8831B33155}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ADF34719-998D-429F-8240-7F8831B33155}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADF34719-998D-429F-8240-7F8831B33155}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADF34719-998D-429F-8240-7F8831B33155}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADF34719-998D-429F-8240-7F8831B33155}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

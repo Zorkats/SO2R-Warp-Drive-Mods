@@ -6,9 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="2a1faf3c-e667-424c-93c7-12cce10ab00c" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.SO2R-Warp-Drive-Mods/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.SO2R-Warp-Drive-Mods/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Patches/System/BattleStatePatches.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/System/BattleStatePatches.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Patches/System/OnUpdate.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/System/OnUpdate.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Patches/Gameplay/BetterEncounters.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/Gameplay/BetterEncounters.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Patches/UI/BGMInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/UI/BGMInfo.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Patches/UI/BgmNameLoader.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/UI/BgmNameLoader.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.cs" beforeDir="false" afterPath="$PROJECT_DIR$/main.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -39,12 +39,14 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/3a/75b9e0b3/UICaptionController.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/57/7ebfb2cd/BgmID.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/5b/0063c69e/BattleCameraSettings.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/60/48169532/FieldCharacter.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/80/dfab5d78/BitFlag.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/8d/08f70fd1/BattleBitFlag.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/99/459cd165/BattleState.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/9e/07f24b6b/BattleManager.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/af/197784d1/StateMachine.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/b0/fcb28b38/BattleCacheInfo.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/b4/1085a1ab/FieldAIController.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/d8/4104d19d/BattleStateMachine.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/fa/4b43437d/UICaptionPresenter.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
@@ -107,7 +109,7 @@
       <workItem from="1750280779328" duration="505000" />
       <workItem from="1750281301214" duration="1306000" />
       <workItem from="1750282856477" duration="27000" />
-      <workItem from="1750282949241" duration="4127000" />
+      <workItem from="1750282949241" duration="7174000" />
     </task>
     <servers />
   </component>

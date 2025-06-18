@@ -5,7 +5,7 @@ using BepInEx;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace SO2R_Warp_Drive_Mods
+namespace SO2R_Warp_Drive_Mods.Patches.UI
 {
     public class BgmEntry
     {

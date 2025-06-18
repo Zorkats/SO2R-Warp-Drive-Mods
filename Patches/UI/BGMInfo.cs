@@ -16,9 +16,6 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
         static BgmID _lastID;
         const string _msgRoot = "QoLBgm";
         const float _duration = 7f;
-        const float _marginX = 150f;
-        const float _marginY = 60f;
-        const float _charPx = 16f;
 
         private static float _hideAt;
         private static bool _shown;
@@ -70,42 +67,38 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
 
                     // --- FINAL, CORRECT POSITIONING LOGIC ---
                     Vector2 pos = Vector2.zero;
-
-                    TextAnchor alignment = TextAnchor.UpperCenter;
+                    Vector2 posDetails = Vector2.zero;
 
                     // Margins from the edge of the screen
-                    float marginX = 400f;
+                    float marginX = 385f;
                     float marginY = 40f;
+                    float marginXDetails = -1500f; // Details text has a larger margin
+                    float marginXDetailsBattle = 400f;
 
                     if (Plugin.IsBattleActive)
                     {
                         // BATTLE: Calculate Top-Left anchoredPosition
                         float x = (-Screen.width / 2f) + marginX;
+                        float xDetails = (-Screen.width / 2f) + marginXDetailsBattle;
                         float y = (Screen.height / 2f) - marginY;
                         pos = new Vector2(x, y);
-                        // For battle, we want the text to be left-aligned
-                        alignment = TextAnchor.UpperLeft;
+                        posDetails = new Vector2(xDetails, y);
                     }
 
                     else if (Plugin.IsBattleActive == false)
                     {
                         // FIELD: Calculate Top-Right anchoredPosition
                         float x = (Screen.width / 2f) - marginX;
+                        float xDetails = (-Screen.width / 2f) - marginXDetails;
                         float y = (Screen.height / 2f) - marginY;
                         pos = new Vector2(x, y);
-                        // For field, we want the text to be right-aligned
-                        alignment = TextAnchor.UpperRight;
+                        posDetails = new Vector2(xDetails, y);
                     }
-
-                    // For this UI system, we must align the text itself for the position to be correct.
-                    // We will need to get the actual Text component and change its alignment property.
-                    // (This will be the next step after we confirm this positioning works).
 
                     var ostType = GameSoundManager.IsOriginalBgm() ? "Original" : "Remake";
                     string msgTitle = $"♪ [{ostType} OST] {title}";
 
                     _ctrl.ShowCaption(msgTitle, pos, _msgRoot + "Title");
-                    SetTextAlignment(_msgRoot + "Title", alignment);
 
                     if (meta != null)
                     {
@@ -113,8 +106,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                         int track = meta.track;
                         string album = meta.album ?? "";
                         string details = $"<size=60%>Track {track:D2}, {composer}, {album}</size>";
-                        _ctrl.ShowCaption(details, pos + new Vector2(0, -35), _msgRoot + "Details");
-                        SetTextAlignment(_msgRoot + "Details", alignment);
+                        _ctrl.ShowCaption(details, posDetails + new Vector2(0, -35), _msgRoot + "Details");
                     }
 
                     _hideAt = Time.time + _duration;

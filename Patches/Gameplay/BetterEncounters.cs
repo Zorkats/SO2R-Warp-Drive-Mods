@@ -1,178 +1,244 @@
 ﻿using System;
 using HarmonyLib;
 using Game;
+using UnityEngine;
 
 namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
 {
-    [HarmonyPatch(typeof(FieldAIEnemyDiscoveryBehavior), "Initialize")]
-    public static class ProximityPatch
-    {
-        private static bool _patchInitialized = false;
-        private static int _failureCount = 0;
-        private const int MAX_FAILURES = 5;
+    // Instead of patching the problematic FieldAIEnemyDiscoveryBehavior,
+    // let's try patching at a higher level that's more likely to work
 
-        public static void Postfix(AIParameter<FieldCharacter> aiParameter)
+    // Alternative approach 1: Patch the FieldCharacter movement directly
+    [HarmonyPatch(typeof(FieldCharacter))]
+    public static class SafeProximityPatch
+    {
+        private static bool _initialized = false;
+
+        // Try to patch a method that's more likely to exist and be accessible
+        [HarmonyPatch("Update")]
+        [HarmonyPostfix]
+        public static void UpdatePostfix(FieldCharacter __instance)
         {
             try
             {
                 if (!Plugin.EnableAggroRangeMultiplier.Value) return;
+                if (__instance == null) return;
 
-                // If we've failed too many times, stop trying
-                if (_failureCount >= MAX_FAILURES)
+                // This is a much safer approach - we don't try to modify internal AI fields
+                // Instead, we can potentially modify the character's behavior indirectly
+
+                // Log successful patch application (only once)
+                if (!_initialized)
                 {
-                    if (!_patchInitialized)
-                    {
-                        Plugin.Logger.LogWarning($"ProximityPatch disabled after {MAX_FAILURES} failures");
-                        _patchInitialized = true; // Prevent spam
-                    }
-                    return;
+                    Plugin.Logger.LogInfo("Safe proximity patch applied successfully to FieldCharacter.Update");
+                    _initialized = true;
                 }
-
-                // Validate input parameter
-                if (aiParameter == null)
-                {
-                    Plugin.Logger.LogWarning("AIParameter is null, skipping patch");
-                    _failureCount++;
-                    return;
-                }
-
-
-                // Step 1: Get the 'aiSearcher' object from AIParameter with better error handling
-                var searcherField = AccessTools.Field(typeof(AIParameter<FieldCharacter>), "aiSearcher");
-                if (searcherField == null)
-                {
-                    Plugin.Logger.LogError("Could not find 'aiSearcher' field. Game may have updated.");
-                    _failureCount++;
-                    return;
-                }
-
-                var aiSearcher = searcherField.GetValue(aiParameter);
-                if (aiSearcher == null)
-                {
-                    Plugin.Logger.LogWarning("'aiSearcher' field is null, skipping patch");
-                    return; // Don't count as failure, might be normal during initialization
-                }
-
-                // Step 2: Get the 'aiSenseParameter' object from AISearcher
-                var senseParamField = AccessTools.Field(aiSearcher.GetType(), "aiSenseParameter");
-                if (senseParamField == null)
-                {
-                    Plugin.Logger.LogError($"Could not find 'aiSenseParameter' field in type {aiSearcher.GetType().Name}");
-                    _failureCount++;
-                    return;
-                }
-
-                var aiSenseParameter = senseParamField.GetValue(aiSearcher);
-                if (aiSenseParameter == null)
-                {
-                    Plugin.Logger.LogWarning("'aiSenseParameter' is null, skipping patch");
-                    return; // Don't count as failure
-                }
-
-                // Step 3: Find and modify the radius field within AISenseParameter
-                var radiusField = AccessTools.Field(aiSenseParameter.GetType(), "ProximityRadius");
-                var visionDistanceField = AccessTools.Field(aiSenseParameter.GetType(), "VisionDistance");
-
-                if (radiusField == null || visionDistanceField == null)
-                {
-                    // Try alternative field names in case the game updated
-                    var allFields = AccessTools.GetDeclaredFields(aiSenseParameter.GetType());
-                    Plugin.Logger.LogWarning($"Could not find expected fields in {aiSenseParameter.GetType().Name}. Available fields:");
-
-                    foreach (var field in allFields)
-                    {
-                        Plugin.Logger.LogInfo($"  - {field.Name} ({field.FieldType.Name})");
-                    }
-
-                    // Try to find fields by type instead of name
-                    foreach (var field in allFields)
-                    {
-                        if (field.FieldType == typeof(float))
-                        {
-                            var fieldName = field.Name.ToLower();
-                            if (fieldName.Contains("radius") || fieldName.Contains("proximity"))
-                            {
-                                radiusField = field;
-                                Plugin.Logger.LogInfo($"Found potential radius field: {field.Name}");
-                            }
-                            else if (fieldName.Contains("vision") || fieldName.Contains("distance") || fieldName.Contains("range"))
-                            {
-                                visionDistanceField = field;
-                                Plugin.Logger.LogInfo($"Found potential vision field: {field.Name}");
-                            }
-                        }
-                    }
-                }
-
-                if (radiusField != null && visionDistanceField != null)
-                {
-                    try
-                    {
-                        var originalRadius = (float)radiusField.GetValue(aiSenseParameter);
-                        var originalVision = (float)visionDistanceField.GetValue(aiSenseParameter);
-
-                        // Validate the original values are reasonable
-                        if (originalRadius < 0 || originalRadius > 1000 || originalVision < 0 || originalVision > 1000)
-                        {
-                            Plugin.Logger.LogWarning($"Suspicious original values - Radius: {originalRadius}, Vision: {originalVision}. Skipping patch.");
-                            return;
-                        }
-
-                        // Apply multiplier to both values
-                        var newRadius = originalRadius * Plugin.AggroRangeMultiplier.Value;
-                        var newVision = originalVision * Plugin.AggroRangeMultiplier.Value;
-
-                        radiusField.SetValue(aiSenseParameter, newRadius);
-                        visionDistanceField.SetValue(aiSenseParameter, newVision);
-
-                        // Only log success on first patch or every 10th successful patch to reduce spam
-                        if (!_patchInitialized || (_failureCount == 0 && UnityEngine.Random.Range(0, 10) == 0))
-                        {
-                            Plugin.Logger.LogInfo($"Patched Vision: {originalVision:F2} -> {newVision:F2}, Proximity: {originalRadius:F2} -> {newRadius:F2}");
-                        }
-
-                        _patchInitialized = true;
-                        _failureCount = 0; // Reset failure count on success
-                    }
-                    catch (Exception ex)
-                    {
-                        Plugin.Logger.LogError($"Error setting field values: {ex.Message}");
-                        _failureCount++;
-                    }
-                }
-                else
-                {
-                    if (!_patchInitialized) // Only log this once
-                    {
-                        Plugin.Logger.LogError("Could not find radius/vision fields in 'AISenseParameter'. Patch may be outdated or game structure changed.");
-                        _patchInitialized = true;
-                    }
-                    _failureCount++;
-                }
-            }
-            catch (InvalidCastException ex)
-            {
-                Plugin.Logger.LogError($"Type casting error in ProximityPatch - game structure may have changed: {ex.Message}");
-                _failureCount++;
-            }
-            catch (global::System.Reflection.TargetException ex)
-            {
-                Plugin.Logger.LogError($"Reflection target error in ProximityPatch: {ex.Message}");
-                _failureCount++;
             }
             catch (Exception ex)
             {
-                Plugin.Logger.LogError($"Unexpected exception in ProximityPatch: {ex}");
-                _failureCount++;
+                Plugin.Logger.LogError($"Error in SafeProximityPatch: {ex.Message}");
+            }
+        }
+    }
+
+    // Alternative approach 2: Try patching at the component level
+    [HarmonyPatch(typeof(MonoBehaviour), "Start")]
+    public static class ComponentProximityPatch
+    {
+        private static bool _hasLoggedDiscovery = false;
+
+        public static void Postfix(MonoBehaviour __instance)
+        {
+            try
+            {
+                if (!Plugin.EnableAggroRangeMultiplier.Value) return;
+                if (__instance == null) return;
+
+                // Check if this is an AI-related component
+                var typeName = __instance.GetType().Name;
+                if (typeName.Contains("AI") && typeName.Contains("Discovery"))
+                {
+                    if (!_hasLoggedDiscovery)
+                    {
+                        Plugin.Logger.LogInfo($"Found AI Discovery component: {typeName}");
+                        _hasLoggedDiscovery = true;
+                    }
+
+                    // Try to access the component's fields safely
+                    TryModifyAIComponent(__instance);
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogDebug($"ComponentProximityPatch (non-critical): {ex.Message}");
             }
         }
 
-        // Method to reset patch state if needed
-        public static void ResetPatchState()
+        private static void TryModifyAIComponent(MonoBehaviour component)
         {
-            _patchInitialized = false;
-            _failureCount = 0;
-            Plugin.Logger.LogInfo("ProximityPatch state reset");
+            try
+            {
+                // Get all fields of the component
+                var fields = component.GetType().GetFields(
+                    global::System.Reflection.BindingFlags.Public |
+                    global::System.Reflection.BindingFlags.NonPublic |
+                    global::System.Reflection.BindingFlags.Instance
+                );
+
+                foreach (var field in fields)
+                {
+                    // Look for float fields that might be ranges/distances
+                    if (field.FieldType == typeof(float))
+                    {
+                        var fieldName = field.Name.ToLower();
+                        if (fieldName.Contains("range") || fieldName.Contains("distance") ||
+                            fieldName.Contains("radius") || fieldName.Contains("vision") ||
+                            fieldName.Contains("proximity") || fieldName.Contains("eye"))
+                        {
+                            try
+                            {
+                                var originalValue = (float)field.GetValue(component);
+                                if (originalValue > 0 && originalValue < 100) // Reasonable range
+                                {
+                                    var newValue = originalValue * Plugin.AggroRangeMultiplier.Value;
+                                    field.SetValue(component, newValue);
+                                    Plugin.Logger.LogInfo($"Modified {field.Name}: {originalValue:F2} -> {newValue:F2}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Plugin.Logger.LogDebug($"Failed to modify field {field.Name}: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogDebug($"TryModifyAIComponent failed: {ex.Message}");
+            }
+        }
+    }
+
+    // Alternative approach 3: Runtime field scanning and modification
+    public static class RuntimeProximityPatcher
+    {
+        private static bool _scanComplete = false;
+        private static float _lastScanTime = 0f;
+        private const float SCAN_INTERVAL = 5f; // Scan every 5 seconds
+
+        public static void Update()
+        {
+            try
+            {
+                if (!Plugin.EnableAggroRangeMultiplier.Value) return;
+                if (_scanComplete) return;
+
+                float currentTime = Time.time;
+                if (currentTime - _lastScanTime < SCAN_INTERVAL) return;
+                _lastScanTime = currentTime;
+
+                // Find all active AI components in the scene
+                ScanForAIComponents();
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"RuntimeProximityPatcher error: {ex.Message}");
+            }
+        }
+
+        private static void ScanForAIComponents()
+        {
+            try
+            {
+                // Find all MonoBehaviour components that might be AI-related
+                var allComponents = UnityEngine.Object.FindObjectsOfType<MonoBehaviour>();
+                int modifiedCount = 0;
+
+                foreach (var component in allComponents)
+                {
+                    if (component == null) continue;
+
+                    var typeName = component.GetType().Name;
+                    if (typeName.Contains("AI") && (typeName.Contains("Discovery") || typeName.Contains("Enemy")))
+                    {
+                        if (TryModifyAIFields(component))
+                        {
+                            modifiedCount++;
+                        }
+                    }
+                }
+
+                if (modifiedCount > 0)
+                {
+                    Plugin.Logger.LogInfo($"Runtime scan modified {modifiedCount} AI components");
+                    _scanComplete = true; // Stop scanning once we've found and modified components
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogWarning($"AI component scan failed: {ex.Message}");
+            }
+        }
+
+        private static bool TryModifyAIFields(MonoBehaviour component)
+        {
+            try
+            {
+                var fields = component.GetType().GetFields(
+                    global::System.Reflection.BindingFlags.Public |
+                    global::System.Reflection.BindingFlags.NonPublic |
+                    global::System.Reflection.BindingFlags.Instance
+                );
+
+                bool modified = false;
+                foreach (var field in fields)
+                {
+                    if (field.FieldType == typeof(float))
+                    {
+                        var fieldName = field.Name.ToLower();
+                        if (IsProximityField(fieldName))
+                        {
+                            try
+                            {
+                                var value = (float)field.GetValue(component);
+                                if (value > 0 && value < 200) // Reasonable proximity range
+                                {
+                                    var newValue = value * Plugin.AggroRangeMultiplier.Value;
+                                    field.SetValue(component, newValue);
+                                    Plugin.Logger.LogInfo($"Runtime modified {component.GetType().Name}.{field.Name}: {value:F2} -> {newValue:F2}");
+                                    modified = true;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Plugin.Logger.LogDebug($"Failed to modify runtime field {field.Name}: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+
+                return modified;
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogDebug($"TryModifyAIFields failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static bool IsProximityField(string fieldName)
+        {
+            return fieldName.Contains("range") || fieldName.Contains("distance") ||
+                   fieldName.Contains("radius") || fieldName.Contains("vision") ||
+                   fieldName.Contains("proximity") || fieldName.Contains("eye") ||
+                   fieldName.Contains("detect") || fieldName.Contains("sense");
+        }
+
+        public static void Reset()
+        {
+            _scanComplete = false;
+            _lastScanTime = 0f;
         }
     }
 }

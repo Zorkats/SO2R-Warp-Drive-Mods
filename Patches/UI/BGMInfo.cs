@@ -8,7 +8,7 @@ using Object = UnityEngine.Object;
 
 namespace SO2R_Warp_Drive_Mods.Patches.UI
 {
-    internal static class BgmCaptionPatch
+    public static class BgmCaptionPatch
     {
         // Change from 'static' to 'internal static' so other patches can access and clear it.
         internal static UICaptionController _ctrl = null!;
@@ -22,7 +22,6 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
 
         private static float _hideAt;
         private static bool _shown;
-        private static bool _gameFullyLoaded = false;
         static readonly HashSet<BgmID> _shownThisSession = new();
 
         public static void Postfix()
@@ -31,23 +30,6 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
             {
                 if (!Plugin.EnableBgmInfo.Value) return;
                 if (GameManager.Instance == null) return;
-
-                if (!_gameFullyLoaded)
-                {
-                    // More robust game state checking
-                    if (GameManager.Instance == null) return;
-
-                    // Wait for scene to be properly loaded
-                    if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().isLoaded)
-                    {
-                        _gameFullyLoaded = true;
-                        Plugin.Logger.LogInfo("Game fully loaded, BGM patch activated");
-                    }
-                    else
-                    {
-                        return; // Still loading
-                    }
-                }
 
                 if (_ctrl == null)
                 {
@@ -87,9 +69,9 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                     if (string.IsNullOrEmpty(title) || title.Contains("Unknown")) return;
 
                     // --- FINAL, CORRECT POSITIONING LOGIC ---
-                    Vector2 pos;
+                    Vector2 pos = Vector2.zero;
 
-                    TextAnchor alignment;
+                    TextAnchor alignment = TextAnchor.UpperCenter;
 
                     // Margins from the edge of the screen
                     float marginX = 400f;
@@ -104,7 +86,8 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                         // For battle, we want the text to be left-aligned
                         alignment = TextAnchor.UpperLeft;
                     }
-                    else
+
+                    else if (Plugin.IsBattleActive == false)
                     {
                         // FIELD: Calculate Top-Right anchoredPosition
                         float x = (Screen.width / 2f) - marginX;

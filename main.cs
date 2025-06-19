@@ -69,13 +69,6 @@ namespace SO2R_Warp_Drive_Mods
                 "Enables detailed debug logging for troubleshooting."
             );
 
-            DisableComplexPatches = Config.Bind(
-                "Debug",
-                "Disable Complex Patches",
-                false,
-                "Disables proximity/aggro patches that might cause crashes."
-            );
-
             // General settings
             EnablePauseOnFocusLoss = Config.Bind(
                 "General",
@@ -143,16 +136,26 @@ namespace SO2R_Warp_Drive_Mods
                 int successCount = 0;
                 int failCount = 0;
 
-                // Apply movement speed patches - safer approach
-                if (TryApplyPatch(typeof(Patches.Gameplay.FieldPlayer_GetMoveSpeed_Patch), "Character Walk Speed Patch"))
-                    successCount++;
-                else
-                    failCount++;
 
-                if (TryApplyPatch(typeof(Patches.Gameplay.FieldCharacter_GetMoveSpeed_Patch), "Character Move Speed Patch"))
-                    successCount++;
-                else
-                    failCount++;
+                // Apply all movement speed equalization patches if enabled
+                if (EnableMovementMultiplier.Value)
+                {
+                    // Apply all three movement patches individually
+                    if (TryApplyPatch(typeof(Patches.Gameplay.PlayerMoveSpeed_Patch), "Player Move Speed Patch"))
+                        successCount++;
+                    else
+                        failCount++;
+
+                    if (TryApplyPatch(typeof(Patches.Gameplay.FollowerMoveSpeed_Patch), "Follower Move Speed Patch"))
+                        successCount++;
+                    else
+                        failCount++;
+
+                    if (TryApplyPatch(typeof(Patches.Gameplay.UniversalWalkSpeed_Patch), "Universal Walk Speed Patch"))
+                        successCount++;
+                    else
+                        failCount++;
+                }
 
                 if (TryApplyPatch(typeof(Patches.System.BattleManager_StartBattle_Patch), "Battle Start Patch"))
                     successCount++;
@@ -164,47 +167,43 @@ namespace SO2R_Warp_Drive_Mods
                 else
                     failCount++;
 
-                // Only try complex patches if not disabled
-                if (!DisableComplexPatches.Value)
+                if (EnablePauseOnFocusLoss.Value)
                 {
-                    if (EnablePauseOnFocusLoss.Value)
-                    {
-                        if (TryApplyPatch(typeof(Patches.System.GameManager_OnUpdate_CombinedPatch), "Update Patch"))
-                            successCount++;
-                        else
-                            failCount++;
-                    }
+                    if (TryApplyPatch(typeof(Patches.System.GameManager_OnUpdate_CombinedPatch), "Update Patch"))
+                        successCount++;
+                    else
+                        failCount++;
+                }
 
                     // BGM Info patch - FIXED: Only apply if enabled AND not disabled by complex patches
-                    if (EnableBgmInfo.Value)
+                if (EnableBgmInfo.Value)
+                {
+                    try
                     {
-                        try
-                        {
                             // Try to load the BGM database (this is safe even if file doesn't exist)
-                            BgmNameLoader.Load();
-                            Logger.LogInfo("BGM database loading attempted.");
+                        BgmNameLoader.Load();
+                        Logger.LogInfo("BGM database loading attempted.");
 
                             // The BGM info functionality is actually handled by the GameManager_OnUpdate_CombinedPatch
                             // which calls BgmCaptionPatch.Postfix(), so we don't need a separate patch here
-                            Logger.LogInfo("BGM Info functionality enabled via Update patch.");
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.LogWarning($"BGM database failed to load: {ex.Message}");
-                            // Don't fail the entire patch process for this
-                        }
+                        Logger.LogInfo("BGM Info functionality enabled via Update patch.");
                     }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning($"BGM database failed to load: {ex.Message}");
+                            // Don't fail the entire patch process for this
+                    }
+                }
 
                     // Proximity patches - most likely to cause issues
-                    if (EnableAggroRangeMultiplier.Value)
-                    {
-                        Logger.LogWarning("Aggro range patches are experimental and may cause instability.");
+                if (EnableAggroRangeMultiplier.Value)
+                {
+                    Logger.LogWarning("Aggro range patches are experimental and may cause instability.");
 
-                        if (TryApplyPatch(typeof(Patches.Gameplay.SafeProximityPatch), "Proximity Patch"))
-                            successCount++;
-                        else
-                            failCount++;
-                    }
+                    if (TryApplyPatch(typeof(Patches.Gameplay.SafeProximityPatch), "Proximity Patch"))
+                        successCount++;
+                    else
+                        failCount++;
                 }
 
                 Logger.LogInfo($"Patch application complete: {successCount} successful, {failCount} failed");

@@ -110,9 +110,11 @@ namespace SO2R_Warp_Drive_Mods
             MovementSpeedMultiplier = Config.Bind(
                 "Gameplay",
                 "Movement Speed Multiplier",
-                1.5f,
+                1.75f,
                 "The multiplier for movement speed. 1.0 is normal, 2.0 is double."
             );
+
+
 
             EnableAggroRangeMultiplier = Config.Bind(
                 "Gameplay",
@@ -141,13 +143,13 @@ namespace SO2R_Warp_Drive_Mods
                 int successCount = 0;
                 int failCount = 0;
 
-                // Apply only the safest patches first
-                if (TryApplyPatch(typeof(Patches.Gameplay.FieldCharacter_GetWalkSpeed_Patch), "Movement Speed Patch"))
+                // Apply movement speed patches - safer approach
+                if (TryApplyPatch(typeof(Patches.Gameplay.FieldPlayer_GetMoveSpeed_Patch), "Character Walk Speed Patch"))
                     successCount++;
                 else
                     failCount++;
 
-                if (TryApplyPatch(typeof(Patches.Gameplay.FieldPlayer_GetMoveSpeed_Patch), "Player Speed Patch"))
+                if (TryApplyPatch(typeof(Patches.Gameplay.FieldCharacter_GetMoveSpeed_Patch), "Character Move Speed Patch"))
                     successCount++;
                 else
                     failCount++;
@@ -256,8 +258,7 @@ namespace SO2R_Warp_Drive_Mods
             {
                 if (EnableAggroRangeMultiplier.Value && !DisableComplexPatches.Value)
                 {
-                    // Note: You'll need to implement RuntimeProximityPatcher if you want this
-                    // Patches.Gameplay.RuntimeProximityPatcher.Update();
+
                 }
             }
             catch (Exception ex)
@@ -282,7 +283,4 @@ namespace SO2R_Warp_Drive_Mods
             }
         }
     }
-
-    // REMOVE THIS DUPLICATE CLASS - Use the one in Patches/UI/BgmNameLoader.cs instead
-    // The duplicate was causing conflicts and the simplified version wasn't actually loading anything
 }

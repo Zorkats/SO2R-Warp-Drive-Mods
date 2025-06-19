@@ -6,54 +6,58 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Reference Include="0Harmony">
-          <HintPath>libs\0Harmony.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Assembly-CSharp">
-          <HintPath>libs\Assembly-CSharp.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="BepInEx.Core">
-          <HintPath>libs\BepInEx.Core.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="BepInEx.Unity.IL2CPP">
-          <HintPath>libs\BepInEx.Unity.IL2CPP.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Il2CppInterop.Runtime">
-          <HintPath>libs\Il2CppInterop.Runtime.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="Il2Cppmscorlib">
-          <HintPath>libs\Il2Cppmscorlib.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine">
-          <HintPath>libs\UnityEngine.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.CoreModule">
-            <HintPath>D:\SteamLibrary\steamapps\common\STAR OCEAN THE SECOND STORY R\BepInEx\unhollowed\UnityEngine.CoreModule.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.IMGUIModule">
-            <HintPath>D:\SteamLibrary\steamapps\common\STAR OCEAN THE SECOND STORY R\BepInEx\unhollowed\UnityEngine.IMGUIModule.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.TextRenderingModule">
-          <HintPath>libs\UnityEngine.TextRenderingModule.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
-        <Reference Include="UnityEngine.UI">
-          <HintPath>libs\UnityEngine.UI.dll</HintPath>
-          <Private>False</Private>
-        </Reference>
+        <PackageReference Include="YamlDotNet" Version="16.3.0" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="YamlDotNet" Version="16.3.0" />
+        <Reference Include="0Harmony">
+            <HintPath>libs\0Harmony.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Assembly-CSharp">
+            <HintPath>libs\Assembly-CSharp.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="BepInEx.Core">
+            <HintPath>libs\BepInEx.Core.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="BepInEx.Unity.IL2CPP">
+            <HintPath>libs\BepInEx.Unity.IL2CPP.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Il2CppInterop.Runtime">
+            <HintPath>libs\Il2CppInterop.Runtime.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Il2Cppmscorlib">
+            <HintPath>libs\Il2Cppmscorlib.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Il2CppSystem">
+            <HintPath>libs\Il2CppSystem.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>libs\UnityEngine.CoreModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.IMGUIModule">
+            <HintPath>libs\UnityEngine.IMGUIModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.InputLegacyModule">
+            <HintPath>libs\UnityEngine.InputLegacyModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+            <HintPath>libs\UnityEngine.TextRenderingModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+            <HintPath>libs\UnityEngine.UI.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
     </ItemGroup>
 
 </Project>

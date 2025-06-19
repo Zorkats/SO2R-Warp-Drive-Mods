@@ -70,15 +70,21 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                     Vector2 posDetails = Vector2.zero;
 
                     // Margins from the edge of the screen
-                    float marginX = 385f;
+                    float marginX = 100f;
+                    float marginXBattle = 400f; // Battle has a different margin
                     float marginY = 40f;
                     float marginXDetails = -1500f; // Details text has a larger margin
                     float marginXDetailsBattle = 400f;
+                    float charPx = 16f; // Character pixel size for alignment
+
+                    var ostType = GameSoundManager.IsOriginalBgm() ? "Original" : "Remake";
+                    string msgTitle = $"♪ [{ostType} OST] {title}";
+                    float totalPx = msgTitle.Length * charPx;
 
                     if (Plugin.IsBattleActive)
                     {
                         // BATTLE: Calculate Top-Left anchoredPosition
-                        float x = (-Screen.width / 2f) + marginX;
+                        float x = (-Screen.width / 2f) + marginXBattle;
                         float xDetails = (-Screen.width / 2f) + marginXDetailsBattle;
                         float y = (Screen.height / 2f) - marginY;
                         pos = new Vector2(x, y);
@@ -88,15 +94,12 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                     else if (Plugin.IsBattleActive == false)
                     {
                         // FIELD: Calculate Top-Right anchoredPosition
-                        float x = (Screen.width / 2f) - marginX;
+                        float x = (Screen.width / 2f) - marginX - (totalPx / 2f);
                         float xDetails = (-Screen.width / 2f) - marginXDetails;
                         float y = (Screen.height / 2f) - marginY;
                         pos = new Vector2(x, y);
                         posDetails = new Vector2(xDetails, y);
                     }
-
-                    var ostType = GameSoundManager.IsOriginalBgm() ? "Original" : "Remake";
-                    string msgTitle = $"♪ [{ostType} OST] {title}";
 
                     _ctrl.ShowCaption(msgTitle, pos, _msgRoot + "Title");
 

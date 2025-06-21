@@ -12,14 +12,14 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
         private static bool _wePaused = false;
         private static bool _isInitialized = false;
         private static float _lastFocusCheckTime = 0f;
-        private const float FOCUS_CHECK_INTERVAL = 0.5f; // Check focus every 0.5 seconds instead of every frame
+        private const float FOCUS_CHECK_INTERVAL = 1f; // Check focus every 0.5 seconds instead of every frame
 
         public static void Postfix()
         {
             try
             {
-                if (!Plugin.EnablePauseOnFocusLoss.Value) return;
-
+                if (!Plugin.EnablePauseOnFocusLoss.Value) return;   
+                
                 // Throttle focus checking to reduce overhead
                 float currentTime = Time.unscaledTime;
                 if (currentTime - _lastFocusCheckTime < FOCUS_CHECK_INTERVAL)

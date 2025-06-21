@@ -39,7 +39,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                     if (Plugin.EnableMovementMultiplier.Value)
                     {
                         // Give followers a boost to keep up. Tweak 1.2f if needed.
-                        __result *= (Plugin.MovementSpeedMultiplier.Value * 1.2f);
+                        __result *= (Plugin.MovementSpeedMultiplier.Value * 2f);
                     }
                 }
             }

@@ -70,7 +70,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                     Vector2 posDetails = Vector2.zero;
 
                     // Margins from the edge of the screen
-                    float marginX = 100f;
+                    float marginX = 95f;
                     float marginXBattle = 400f; // Battle has a different margin
                     float marginY = 40f;
                     float marginXDetails = -1500f; // Details text has a larger margin

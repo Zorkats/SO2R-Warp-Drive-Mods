@@ -36,8 +36,8 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
             // After the delay has passed and patches are applied, run the normal update logic.
             if (Plugin.DelayedPatchesApplied)
             {
+                UI.AffectionEditor.Update();
                 PauseOnFocusLossPatch.Postfix(); 
-                UI.BgmCaptionPatch.Postfix();
                 FavorabilityGauge_AddNumber_Patch.ProcessPendingUpdates();
             }
         }

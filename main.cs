@@ -56,7 +56,9 @@ namespace SO2R_Warp_Drive_Mods
                 Logger.LogInfo("Applying delayed patches...");
                 int successCount = 0;
                 int failCount = 0;
-
+                
+                if (TryApplyPatch(typeof(Patches.System.MethodFinderPatch), "Method Finder Spy")) successCount++; else failCount++;
+                
                 if (EnableMovementMultiplier.Value)
                 {
                     if (TryApplyPatch(typeof(Patches.Gameplay.PlayerMoveSpeed_Patch), "Player Move Speed Patch")) successCount++; else failCount++;

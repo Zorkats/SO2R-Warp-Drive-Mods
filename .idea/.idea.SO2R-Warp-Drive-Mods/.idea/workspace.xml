@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2a1faf3c-e667-424c-93c7-12cce10ab00c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Patches/UI/FavorabilityPatch.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Patches/UI/AffectionEditor.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.SO2R-Warp-Drive-Mods/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.SO2R-Warp-Drive-Mods/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Patches/Gameplay/MovementandFieldEncounter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/Gameplay/MovementandFieldEncounter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Patches/System/OnUpdate.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/System/OnUpdate.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Patches/System/PauseOnFocusLossPatch.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/System/PauseOnFocusLossPatch.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Patches/UI/BGMInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Patches/UI/BGMInfo.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/SO2R-Warp-Drive-Mods.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/SO2R-Warp-Drive-Mods.csproj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.cs" beforeDir="false" afterPath="$PROJECT_DIR$/main.cs" afterDir="false" />
     </list>
@@ -59,6 +56,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/7c/b78e3c38/FieldAIPlayerCutinBehavior.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/80/dfab5d78/BitFlag.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/8d/08f70fd1/BattleBitFlag.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/8d/8cf3c806/PartyManager.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/90/3eeaad79/AIController`1.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/92/d986804f/Physics2.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/96/e0eb0b82/FieldBillboardObject.cs" root0="FORCE_HIGHLIGHTING" />
@@ -81,6 +79,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/7710979873354c5598e3898fe56ef49422d000/fa/4b43437d/UICaptionPresenter.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/metadata/6c5d522f2f8d43e0a55c183046b307ae136a18/f2/36ad5e7b/UnityEngine.CoreModule.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/metadata/7710979873354c5598e3898fe56ef49422d000/69/a470b4d0/Assembly-CSharp.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Patches/UI/AffectionEditor.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -103,7 +102,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.lookFeel&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -150,7 +149,15 @@
       <workItem from="1750374879070" duration="1000" />
       <workItem from="1750433051035" duration="699000" />
       <workItem from="1750448830547" duration="1306000" />
-      <workItem from="1750465170049" duration="7383000" />
+      <workItem from="1750465170049" duration="12306000" />
+      <workItem from="1750520909843" duration="256000" />
+      <workItem from="1750521196070" duration="1575000" />
+      <workItem from="1750903579963" duration="1010000" />
+      <workItem from="1750905201250" duration="626000" />
+      <workItem from="1750942753557" duration="48000" />
+      <workItem from="1751152810837" duration="1102000" />
+      <workItem from="1751155112876" duration="4000" />
+      <workItem from="1751494946085" duration="145000" />
     </task>
     <servers />
   </component>

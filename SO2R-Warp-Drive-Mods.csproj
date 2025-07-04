@@ -38,11 +38,17 @@
             <HintPath>libs\Il2CppSystem.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="Unity.InputSystem">
+          <HintPath>D:\SteamLibrary\steamapps\common\STAR OCEAN THE SECOND STORY R\BepInEx\interop\Unity.InputSystem.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
         <Reference Include="Unity.TextMeshPro">
           <HintPath>D:\SteamLibrary\steamapps\common\STAR OCEAN THE SECOND STORY R\BepInEx\interop\Unity.TextMeshPro.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.AIModule">
           <HintPath>libs\UnityEngine.AIModule.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.CoreModule">
             <HintPath>libs\UnityEngine.CoreModule.dll</HintPath>
@@ -56,14 +62,25 @@
             <HintPath>libs\UnityEngine.InputLegacyModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="UnityEngine.InputModule">
+          <HintPath>D:\SteamLibrary\steamapps\common\STAR OCEAN THE SECOND STORY R\BepInEx\interop\UnityEngine.InputModule.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
         <Reference Include="UnityEngine.PhysicsModule">
           <HintPath>libs\UnityEngine.PhysicsModule.dll</HintPath>
+          <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.StreamingModule">
+          <HintPath>D:\SteamLibrary\steamapps\common\STAR OCEAN THE SECOND STORY R\BepInEx\interop\UnityEngine.StreamingModule.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.TextCoreFontEngineModule">
           <HintPath>D:\SteamLibrary\steamapps\common\STAR OCEAN THE SECOND STORY R\BepInEx\interop\UnityEngine.TextCoreFontEngineModule.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.TextCoreTextEngineModule">
           <HintPath>D:\SteamLibrary\steamapps\common\STAR OCEAN THE SECOND STORY R\BepInEx\interop\UnityEngine.TextCoreTextEngineModule.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.TextRenderingModule">
             <HintPath>libs\UnityEngine.TextRenderingModule.dll</HintPath>
@@ -71,10 +88,15 @@
         </Reference>
         <Reference Include="UnityEngine.TLSModule">
           <HintPath>D:\SteamLibrary\steamapps\common\STAR OCEAN THE SECOND STORY R\BepInEx\interop\UnityEngine.TLSModule.dll</HintPath>
+          <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UI">
             <HintPath>libs\UnityEngine.UI.dll</HintPath>
             <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UIModule">
+          <HintPath>D:\SteamLibrary\steamapps\common\STAR OCEAN THE SECOND STORY R\BepInEx\interop\UnityEngine.UIModule.dll</HintPath>
+          <Private>False</Private>
         </Reference>
     </ItemGroup>
 

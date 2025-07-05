@@ -49,7 +49,30 @@ namespace SO2R_Warp_Drive_Mods
                 Logger.LogError("CRITICAL: Failed to apply GameManager_OnUpdate_CombinedPatch. Mod will not function.");
             }
             
+            // Initialize runtime configuration manager
+            RuntimeConfigManager.Initialize();
+            
             Logger.LogInfo("Configuration loaded. Other patches will be applied after a delay.");
+        }
+        
+        public override bool Unload()
+        {
+            try
+            {
+                // Cleanup runtime config manager
+                RuntimeConfigManager.Cleanup();
+                
+                // Unpatch all Harmony patches
+                _harmonyInstance?.UnpatchSelf();
+                
+                Logger.LogInfo("SO2R QoL Patches unloaded successfully.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"Error during unload: {ex}");
+                return false;
+            }
         }
 
         // --- PHASE 2: This method will be called by our update patch after the delay. ---

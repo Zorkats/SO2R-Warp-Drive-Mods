@@ -133,9 +133,7 @@ namespace SO2R_Warp_Drive_Mods
         {
             try
             {
-                if (EnableDebugMode.Value) Logger.LogInfo($"Attempting to apply: {patchName}");
                 _harmonyInstance.PatchAll(patchType);
-                if (EnableDebugMode.Value) Logger.LogInfo($"✓ {patchName} applied successfully");
                 return true;
             }
             catch (Exception ex)

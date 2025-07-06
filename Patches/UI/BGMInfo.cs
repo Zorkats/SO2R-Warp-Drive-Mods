@@ -47,7 +47,6 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
 
                     if (Plugin.ShowOncePerSession.Value && _shownThisSession.Contains(id))
                     {
-                        Plugin.Logger.LogInfo($"[BGMInfo] Track {id} already shown this session. Skipping.");
                         return;
                     }
                     _shownThisSession.Add(id);
@@ -57,11 +56,9 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
 
                     if (string.IsNullOrEmpty(title) || title.Contains("Unknown"))
                     {
-                        Plugin.Logger.LogInfo($"[BGMInfo] Track title is null or unknown. Skipping display.");
                         return;
                     }
                     
-                    Plugin.Logger.LogInfo($"[BGMInfo] Preparing to show title: {title}");
 
                     Vector2 pos = Vector2.zero;
                     Vector2 posDetails = Vector2.zero;
@@ -92,8 +89,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                         pos = new Vector2(x, y);
                         posDetails = new Vector2(xDetails, y);
                     }
-
-                    Plugin.Logger.LogInfo($"[BGMInfo] Showing title caption: '{msgTitle}' at position {pos}");
+                    
                     _ctrl.ShowCaption(msgTitle, pos, _msgRoot + "Title");
 
                     if (meta != null)
@@ -102,7 +98,6 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                         int track = meta.track;
                         string album = meta.album ?? "";
                         string details = $"<size=60%>Track {track:D2}, {composer}, {album}</size>";
-                        Plugin.Logger.LogInfo($"[BGMInfo] Showing details caption: '{details}'");
                         _ctrl.ShowCaption(details, posDetails + new Vector2(0, -35), _msgRoot + "Details");
                     }
 

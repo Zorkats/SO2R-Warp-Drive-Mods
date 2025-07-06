@@ -23,13 +23,14 @@ namespace SO2R_Warp_Drive_Mods
         private static Dictionary<string, TextMeshProUGUI> _sliderLabels = new Dictionary<string, TextMeshProUGUI>();
         private static int _selectedIndex = 0;
         private static List<string> _optionKeys = new List<string>();
+        private static float _originalTimeScale = 1f;
+        private static bool _pausedByConfig = false;
 
         // Pagination
         private static int _currentPage = 0;
         private static int _totalPages = 3;
         private static TextMeshProUGUI _pageIndicator;
         private static List<GameObject> _pageContents = new List<GameObject>();
-        private static TMP_FontAsset _uiFont;
 
         public static void Initialize()
         {
@@ -77,12 +78,13 @@ namespace SO2R_Warp_Drive_Mods
                     _isVisible = !_isVisible;
                     Plugin.Logger.LogInfo($"Runtime Config toggled. Visible: {_isVisible}");
 
-                    if (_isVisible && _window == null)
+                    // If window was destroyed (e.g., during scene transition), recreate it
+                    if (_isVisible && (_window == null || !_window))
                     {
                         CreateConfigWindow();
                     }
 
-                    if (_window != null)
+                    if (_window != null && _window)
                     {
                         _window.SetActive(_isVisible);
 
@@ -90,18 +92,29 @@ namespace SO2R_Warp_Drive_Mods
                         {
                             UpdateUIValues();
                             ShowPage(_currentPage);
+                            // Store original timescale to restore it later
+                            if (!_pausedByConfig)
+                            {
+                                _originalTimeScale = Time.timeScale;
+                                _pausedByConfig = true;
+                            }
                             Time.timeScale = 0f;
                             Cursor.visible = true;
                             Cursor.lockState = CursorLockMode.None;
                         }
                         else
                         {
-                            Time.timeScale = 1f;
+                            // Restore original timescale
+                            if (_pausedByConfig)
+                            {
+                                Time.timeScale = _originalTimeScale;
+                                _pausedByConfig = false;
+                            }
                         }
                     }
                 }
 
-                if (_isVisible && _window != null && Keyboard.current != null)
+                if (_isVisible && _window != null && _window && Keyboard.current != null)
                 {
                     HandleInput();
                 }
@@ -109,6 +122,12 @@ namespace SO2R_Warp_Drive_Mods
             catch (Exception ex)
             {
                 Plugin.Logger.LogError($"Error in RuntimeConfigManager.Update: {ex}");
+                // Reset timescale in case of error
+                if (_pausedByConfig)
+                {
+                    Time.timeScale = _originalTimeScale;
+                    _pausedByConfig = false;
+                }
             }
         }
 
@@ -319,21 +338,21 @@ namespace SO2R_Warp_Drive_Mods
         {
             try
             {
-                if (_uiFont == null)
+                // Always get fresh font reference instead of caching
+                TMP_FontAsset currentFont = null;
+                var existingText = UnityEngine.Object.FindObjectOfType<TextMeshProUGUI>();
+                if (existingText != null && existingText.font != null)
                 {
-                    var existingText = UnityEngine.Object.FindObjectOfType<TextMeshProUGUI>();
-                    if (existingText != null && existingText.font != null)
-                    {
-                        _uiFont = existingText.font;
-                        Plugin.Logger.LogInfo($"Successfully cached UI Font: {_uiFont.name}");
-                    }
-                    else
-                    {
-                        Plugin.Logger.LogError("Could not find an active TextMeshProUGUI object to source a font from. UI cannot be created.");
-                        return;
-                    }
+                    currentFont = existingText.font;
+                    Plugin.Logger.LogInfo($"Found UI Font: {currentFont.name}");
+                }
+                else
+                {
+                    Plugin.Logger.LogError("Could not find an active TextMeshProUGUI object to source a font from. UI cannot be created.");
+                    return;
                 }
 
+                // Clear existing references
                 _toggles.Clear();
                 _sliders.Clear();
                 _sliderLabels.Clear();
@@ -342,14 +361,19 @@ namespace SO2R_Warp_Drive_Mods
                 _selectedIndex = 0;
                 _currentPage = 0;
 
-                _window = new GameObject("RuntimeConfigWindow");
+                // Always get fresh canvas reference
                 var canvas = UnityEngine.Object.FindObjectOfType<Canvas>();
                 if (canvas == null)
                 {
                     Plugin.Logger.LogError("Could not find a Canvas to attach the config window to!");
                     return;
                 }
+
+                _window = new GameObject("RuntimeConfigWindow");
                 _window.transform.SetParent(canvas.transform, false);
+                
+                // Make window persistent across scene changes
+                UnityEngine.Object.DontDestroyOnLoad(_window);
 
                 var background = _window.AddComponent<Image>();
                 background.color = new Color(0.1f, 0.1f, 0.1f, 0.95f);
@@ -361,7 +385,7 @@ namespace SO2R_Warp_Drive_Mods
                 var titleObject = new GameObject("ConfigTitle");
                 titleObject.transform.SetParent(_window.transform, false);
                 var titleText = titleObject.AddComponent<TextMeshProUGUI>();
-                titleText.font = _uiFont;
+                titleText.font = currentFont; // Use fresh font reference
                 titleText.text = "SO2R QoL Patches - Runtime Configuration";
                 titleText.fontSize = 28;
                 titleText.alignment = TextAlignmentOptions.Center;
@@ -373,7 +397,7 @@ namespace SO2R_Warp_Drive_Mods
                 var instructionObject = new GameObject("Instructions");
                 instructionObject.transform.SetParent(_window.transform, false);
                 var instructionText = instructionObject.AddComponent<TextMeshProUGUI>();
-                instructionText.font = _uiFont;
+                instructionText.font = currentFont; // Use fresh font reference
                 instructionText.text = "Press F9 to close. Use number keys to toggle options, arrow keys for sliders.";
                 instructionText.fontSize = 16;
                 instructionText.alignment = TextAlignmentOptions.Center;
@@ -385,7 +409,7 @@ namespace SO2R_Warp_Drive_Mods
                 var pageIndicatorObj = new GameObject("PageIndicator");
                 pageIndicatorObj.transform.SetParent(_window.transform, false);
                 _pageIndicator = pageIndicatorObj.AddComponent<TextMeshProUGUI>();
-                _pageIndicator.font = _uiFont;
+                _pageIndicator.font = currentFont; // Use fresh font reference
                 _pageIndicator.fontSize = 18;
                 _pageIndicator.alignment = TextAlignmentOptions.Center;
                 _pageIndicator.color = Color.yellow;
@@ -402,7 +426,7 @@ namespace SO2R_Warp_Drive_Mods
                 contentRect.offsetMin = new Vector2(25, 60);
                 contentRect.offsetMax = new Vector2(-25, -100);
 
-                CreateConfigPages();
+                CreateConfigPages(currentFont); // Pass font to methods that need it
 
                 Plugin.Logger.LogInfo("Runtime config window created successfully.");
             }
@@ -410,47 +434,47 @@ namespace SO2R_Warp_Drive_Mods
             {
                 Plugin.Logger.LogError($"Error in CreateConfigWindow: {ex}");
             }
-        }
+}
         
-        private static void CreateConfigPages()
+        private static void CreateConfigPages(TMP_FontAsset font)
         {
             var page1 = CreatePage("Page1");
-            CreateSectionHeader("General Settings", page1);
+            CreateSectionHeader("General Settings", page1, font);
             var generalGrid = CreateGridContainer(page1);
-            CreateToggle("Pause On Focus Loss", "PauseOnFocusLoss", Plugin.EnablePauseOnFocusLoss, generalGrid);
-            CreateSectionHeader("Quality of Life", page1);
+            CreateToggle("Pause On Focus Loss", "PauseOnFocusLoss", Plugin.EnablePauseOnFocusLoss, generalGrid, font);
+            CreateSectionHeader("Quality of Life", page1, font);
             var qolGrid = CreateGridContainer(page1);
-            CreateToggle("Enable BGM Info Display", "BgmInfo", Plugin.EnableBgmInfo, qolGrid);
-            CreateToggle("Show BGM Once Per Session", "ShowOncePerSession", Plugin.ShowOncePerSession, qolGrid);
-            CreateToggle("Enable Movement Speed Multiplier", "MovementMultiplier", Plugin.EnableMovementMultiplier, qolGrid);
-            CreateSlider("Movement Speed", "MovementSpeed", Plugin.MovementSpeedMultiplier, 0.5f, 3.0f, qolGrid);
-            CreateSectionHeader("Difficulty - General", page1);
+            CreateToggle("Enable BGM Info Display", "BgmInfo", Plugin.EnableBgmInfo, qolGrid, font);
+            CreateToggle("Show BGM Once Per Session", "ShowOncePerSession", Plugin.ShowOncePerSession, qolGrid, font);
+            CreateToggle("Enable Movement Speed Multiplier", "MovementMultiplier", Plugin.EnableMovementMultiplier, qolGrid, font);
+            CreateSlider("Movement Speed", "MovementSpeed", Plugin.MovementSpeedMultiplier, 0.5f, 3.0f, qolGrid, font);
+            CreateSectionHeader("Difficulty - General", page1, font);
             var diffGeneralGrid = CreateGridContainer(page1);
-            CreateToggle("Remove Full Heal on Level Up", "NoHealOnLevelUp", Plugin.EnableNoHealOnLevelUp, diffGeneralGrid);
+            CreateToggle("Remove Full Heal on Level Up", "NoHealOnLevelUp", Plugin.EnableNoHealOnLevelUp, diffGeneralGrid, font);
             
             var page2 = CreatePage("Page2");
-            CreateSectionHeader("Difficulty - Formation Bonuses", page2);
+            CreateSectionHeader("Difficulty - Formation Bonuses", page2, font);
             var formationGrid = CreateGridContainer(page2);
-            CreateToggle("Reset Every Battle", "FormationBonusReset", Plugin.EnableFormationBonusReset, formationGrid);
-            CreateToggle("Halve Bonus Effects", "FormationBonusHalved", Plugin.EnableFormationBonusHalved, formationGrid);
-            CreateToggle("Harder to Acquire", "FormationBonusHarder", Plugin.EnableFormationBonusHarder, formationGrid);
-            CreateToggle("Disable Completely", "FormationBonusDisable", Plugin.EnableFormationBonusDisable, formationGrid);
-            CreateSlider("Point Gain", "FormationBonusPoint", Plugin.FormationBonusPointMultiplier, 0.1f, 1.0f, formationGrid);
-            CreateSectionHeader("Difficulty - Chain Battles", page2);
+            CreateToggle("Reset Every Battle", "FormationBonusReset", Plugin.EnableFormationBonusReset, formationGrid, font);
+            CreateToggle("Halve Bonus Effects", "FormationBonusHalved", Plugin.EnableFormationBonusHalved, formationGrid, font);
+            CreateToggle("Harder to Acquire", "FormationBonusHarder", Plugin.EnableFormationBonusHarder, formationGrid, font);
+            CreateToggle("Disable Completely", "FormationBonusDisable", Plugin.EnableFormationBonusDisable, formationGrid, font);
+            CreateSlider("Point Gain", "FormationBonusPoint", Plugin.FormationBonusPointMultiplier, 0.1f, 1.0f, formationGrid, font);
+            CreateSectionHeader("Difficulty - Chain Battles", page2, font);
             var chainGrid = CreateGridContainer(page2);
-            CreateToggle("Reduce Chain Bonuses", "ChainBattleNerf", Plugin.EnableChainBattleNerf, chainGrid);
-            CreateToggle("Disable Chain Bonuses", "ChainBattleDisable", Plugin.EnableChainBattleDisable, chainGrid);
-            CreateSlider("Chain Bonus", "ChainBattleBonus", Plugin.ChainBattleBonusMultiplier, 0.0f, 1.0f, chainGrid);
+            CreateToggle("Reduce Chain Bonuses", "ChainBattleNerf", Plugin.EnableChainBattleNerf, chainGrid, font);
+            CreateToggle("Disable Chain Bonuses", "ChainBattleDisable", Plugin.EnableChainBattleDisable, chainGrid, font);
+            CreateSlider("Chain Bonus", "ChainBattleBonus", Plugin.ChainBattleBonusMultiplier, 0.0f, 1.0f, chainGrid, font);
 
             var page3 = CreatePage("Page3");
-            CreateSectionHeader("Difficulty - Mission Rewards", page3);
+            CreateSectionHeader("Difficulty - Mission Rewards", page3, font);
             var missionGrid = CreateGridContainer(page3);
-            CreateToggle("Reduce Mission Rewards", "MissionRewardNerf", Plugin.EnableMissionRewardNerf, missionGrid);
-            CreateToggle("Nerf ALL Missions", "NerfAllMissions", Plugin.NerfAllMissionRewards, missionGrid);
-            CreateSlider("Reward Multiplier", "MissionReward", Plugin.MissionRewardMultiplier, 0.1f, 1.0f, missionGrid);
-            CreateSectionHeader("Debug", page3);
+            CreateToggle("Reduce Mission Rewards", "MissionRewardNerf", Plugin.EnableMissionRewardNerf, missionGrid, font);
+            CreateToggle("Nerf ALL Missions", "NerfAllMissions", Plugin.NerfAllMissionRewards, missionGrid, font);
+            CreateSlider("Reward Multiplier", "MissionReward", Plugin.MissionRewardMultiplier, 0.1f, 1.0f, missionGrid, font);
+            CreateSectionHeader("Debug", page3, font);
             var debugGrid = CreateGridContainer(page3);
-            CreateToggle("Enable Debug Logging", "DebugMode", Plugin.EnableDebugMode, debugGrid);
+            CreateToggle("Enable Debug Logging", "DebugMode", Plugin.EnableDebugMode, debugGrid, font);
 
             ShowPage(0);
         }
@@ -497,7 +521,7 @@ namespace SO2R_Warp_Drive_Mods
             return pageObj;
         }
 
-        private static void CreateSectionHeader(string text, GameObject parent)
+        private static void CreateSectionHeader(string text, GameObject parent, TMP_FontAsset font)
         {
             try
             {
@@ -505,7 +529,7 @@ namespace SO2R_Warp_Drive_Mods
                 headerObj.transform.SetParent(parent.transform, false);
                 headerObj.AddComponent<LayoutElement>().minHeight = 30;
                 var headerText = headerObj.AddComponent<TextMeshProUGUI>();
-                headerText.font = _uiFont;
+                headerText.font = font;
                 headerText.text = $"━━━ {text} ━━━";
                 headerText.fontSize = 20;
                 headerText.alignment = TextAlignmentOptions.Center;
@@ -518,7 +542,7 @@ namespace SO2R_Warp_Drive_Mods
             }
         }
 
-        private static void CreateToggle(string label, string key, ConfigEntry<bool> config, GameObject parent)
+        private static void CreateToggle(string label, string key, ConfigEntry<bool> config, GameObject parent, TMP_FontAsset font)
         {
             try
             {
@@ -556,7 +580,7 @@ namespace SO2R_Warp_Drive_Mods
                 var labelLayout = labelObj.AddComponent<LayoutElement>();
                 labelLayout.flexibleWidth = 1;
                 var labelText = labelObj.AddComponent<TextMeshProUGUI>();
-                labelText.font = _uiFont;
+                labelText.font = font;
                 labelText.text = $"{GetKeyHint(key)} {label}";
                 labelText.fontSize = 16;
                 labelText.color = Color.white;
@@ -593,7 +617,7 @@ namespace SO2R_Warp_Drive_Mods
         }
 
         // Final reworked slider - now places label and slider side-by-side
-        private static void CreateSlider(string label, string key, ConfigEntry<float> config, float min, float max, GameObject parent)
+        private static void CreateSlider(string label, string key, ConfigEntry<float> config, float min, float max, GameObject parent, TMP_FontAsset font)
         {
             try
             {
@@ -607,7 +631,7 @@ namespace SO2R_Warp_Drive_Mods
                 labelObj.transform.SetParent(sliderCell.transform, false);
                 labelObj.AddComponent<LayoutElement>().minWidth = 160;
                 var labelText = labelObj.AddComponent<TextMeshProUGUI>();
-                labelText.font = _uiFont;
+                labelText.font = font;
                 labelText.text = $"{GetSliderLabel(key)}: {config.Value:F2}x";
                 labelText.fontSize = 16;
                 labelText.color = Color.white;
@@ -686,17 +710,39 @@ namespace SO2R_Warp_Drive_Mods
 
         public static void Cleanup()
         {
-            _configWatcher?.Dispose();
-            if (_window != null)
+            try
             {
-                UnityEngine.Object.Destroy(_window);
-                _window = null;
+                // Restore timescale before cleanup
+                if (_pausedByConfig)
+                {
+                    Time.timeScale = _originalTimeScale;
+                    _pausedByConfig = false;
+                }
+
+                _configWatcher?.Dispose();
+                _configWatcher = null;
+
+                if (_window != null)
+                {
+                    UnityEngine.Object.Destroy(_window);
+                    _window = null;
+                }
+
+                _toggles.Clear();
+                _sliders.Clear();
+                _sliderLabels.Clear();
+                _optionKeys.Clear();
+                _pageContents.Clear();
+                _pageIndicator = null;
+                _contentPanel = null;
+                _isVisible = false;
+                _selectedIndex = 0;
+                _currentPage = 0;
             }
-            _toggles.Clear();
-            _sliders.Clear();
-            _sliderLabels.Clear();
-            _optionKeys.Clear();
-            _pageContents.Clear();
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error during cleanup: {ex}");
+            }
         }
     }
 }

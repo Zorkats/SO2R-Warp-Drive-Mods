@@ -40,6 +40,9 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
                 PauseOnFocusLossPatch.Postfix(); 
                 FavorabilityGauge_AddNumber_Patch.ProcessPendingUpdates();
             }
+            
+            // Update the runtime configuration manager to check for F9 key
+            RuntimeConfigManager.Update();
         }
     }
 }

@@ -19,7 +19,7 @@ namespace SO2R_Warp_Drive_Mods
         public static bool DelayedPatchesApplied = false;
 
         // All your ConfigEntry declarations remain here...
-        internal static ConfigEntry<bool> EnablePauseOnFocusLoss, EnableBgmInfo, ShowOncePerSession, EnableMovementMultiplier, EnableAggroRangeMultiplier, EnableDebugMode, DisableComplexPatches, EnableNoHealOnLevelUp;
+        internal static ConfigEntry<bool> EnablePauseOnFocusLoss, EnableBgmInfo, ShowOncePerSession, EnableMovementMultiplier, EnableAggroRangeMultiplier, EnableDebugMode, EnableNoHealOnLevelUp;
         internal static ConfigEntry<bool> EnableFormationBonusReset, EnableFormationBonusHalved, EnableFormationBonusHarder, EnableFormationBonusDisable;
         internal static ConfigEntry<bool> EnableChainBattleNerf, EnableChainBattleDisable;
         internal static ConfigEntry<bool> EnableMissionRewardNerf, NerfAllMissionRewards;

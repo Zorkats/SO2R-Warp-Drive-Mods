@@ -14,8 +14,8 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
             {
                 if (Plugin.EnableMovementMultiplier.Value)
                 {
-                    // Apply the standard multiplier to the player.
-                    __result *= Plugin.MovementSpeedMultiplier.Value;
+                    // Apply a fixed x2 multiplier to the player.
+                    __result *= 2.0f;
                 }
             }
             catch (Exception ex)
@@ -38,8 +38,8 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 {
                     if (Plugin.EnableMovementMultiplier.Value)
                     {
-                        // Give followers a boost to keep up. Tweak 1.2f if needed.
-                        __result *= (Plugin.MovementSpeedMultiplier.Value * 2f);
+                        // Give followers a fixed boost to keep up.
+                        __result *= (2.0f * 1.5f); // Total of x3 for followers
                     }
                 }
             }
@@ -64,12 +64,12 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 if (__instance.FieldCharacterType == FieldCharacterType.FollowNpc)
                 {
                     // Give followers a boost to their walk speed.
-                     __result *= (Plugin.MovementSpeedMultiplier.Value * 1.2f);
+                     __result *= (2.0f * 1.2f);
                 }
                 else
                 {
-                    // Player and other characters get the standard multiplier.
-                    __result *= Plugin.MovementSpeedMultiplier.Value;
+                    // Player and other characters get the fixed multiplier.
+                    __result *= 2.0f;
                 }
             }
             catch (Exception ex)

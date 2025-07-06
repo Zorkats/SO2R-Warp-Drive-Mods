@@ -48,6 +48,13 @@ namespace SO2R_Warp_Drive_Mods
             {
                 Logger.LogError("CRITICAL: Failed to apply GameManager_OnUpdate_CombinedPatch. Mod will not function.");
             }
+            if (EnableMovementMultiplier.Value)
+            {
+                TryApplyPatch(typeof(Patches.Gameplay.PlayerMoveSpeed_Patch), "Player Move Speed Patch");
+                TryApplyPatch(typeof(Patches.Gameplay.FollowerMoveSpeed_Patch), "Follower Move Speed Patch");
+                TryApplyPatch(typeof(Patches.Gameplay.UniversalWalkSpeed_Patch), "Universal Walk Speed Patch");
+            }
+
             
             // Initialize runtime configuration manager
             RuntimeConfigManager.Initialize();
@@ -86,13 +93,6 @@ namespace SO2R_Warp_Drive_Mods
                 
                 if (TryApplyPatch(typeof(Patches.System.MethodFinderPatch), "Method Finder Spy")) successCount++; else failCount++;
                 
-                if (EnableMovementMultiplier.Value)
-                {
-                    if (TryApplyPatch(typeof(Patches.Gameplay.PlayerMoveSpeed_Patch), "Player Move Speed Patch")) successCount++; else failCount++;
-                    if (TryApplyPatch(typeof(Patches.Gameplay.FollowerMoveSpeed_Patch), "Follower Move Speed Patch")) successCount++; else failCount++;
-                    if (TryApplyPatch(typeof(Patches.Gameplay.UniversalWalkSpeed_Patch), "Universal Walk Speed Patch")) successCount++; else failCount++;
-                }
-
                 if (TryApplyPatch(typeof(Patches.UI.FavorabilityGauge_AddNumber_Patch.CatchValuePatch), "Affection Value Catcher")) successCount++; else failCount++;
                 
                 // Add the new No Heal on Level Up patch
@@ -158,7 +158,7 @@ namespace SO2R_Warp_Drive_Mods
             
             // Gameplay
             EnableMovementMultiplier = Config.Bind("Gameplay", "Enable Movement Speed Multiplier", true, "Enables a multiplier for player movement speed.");
-            MovementSpeedMultiplier = Config.Bind("Gameplay", "Movement Speed Multiplier", 1.75f, "The multiplier for movement speed. 1.0 is normal, 2.0 is double.");
+            //MovementSpeedMultiplier = Config.Bind("Gameplay", "Movement Speed Multiplier", 1.75f, "The multiplier for movement speed. 1.0 is normal, 2.0 is double.");
             
             // Difficulty Options
             EnableNoHealOnLevelUp = Config.Bind("Difficulty", "Remove Full Heal on Level Up", false, "Disables the full HP/MP restoration that occurs when characters level up, making the game more challenging.");

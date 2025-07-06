@@ -15,7 +15,7 @@ namespace SO2R_Warp_Drive_Mods
         private static bool _isVisible = false;
         private static GameObject _window;
         private static GameObject _contentPanel;
-        private static FileSystemWatcher _configWatcher;
+        private static GameObject _persistentCanvas;
         private static float _lastReloadTime = 0f;
         private const float RELOAD_COOLDOWN = 1f;
         private static Dictionary<string, GameObject> _toggles = new Dictionary<string, GameObject>();
@@ -31,6 +31,10 @@ namespace SO2R_Warp_Drive_Mods
         private static int _totalPages = 3;
         private static TextMeshProUGUI _pageIndicator;
         private static List<GameObject> _pageContents = new List<GameObject>();
+        
+        // Font caching
+        private static TMP_FontAsset _cachedFont;
+        private static readonly string[] _fallbackFontNames = { "LiberationSans SDF", "Arial SDF", "ARIAL SDF" };
 
         public static void Initialize()
         {
@@ -38,12 +42,10 @@ namespace SO2R_Warp_Drive_Mods
             {
                 var configFile = Path.Combine(Paths.ConfigPath, "com.zorkats.so2r_qol.cfg");
                 var configDir = Path.GetDirectoryName(configFile);
+                
 
-                _configWatcher = new FileSystemWatcher(configDir);
-                _configWatcher.Filter = Path.GetFileName(configFile);
-                _configWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size;
-                _configWatcher.Changed += OnConfigFileChanged;
-                _configWatcher.EnableRaisingEvents = true;
+            // Create persistent canvas immediately
+                CreatePersistentCanvas();
 
                 Plugin.Logger.LogInfo("Runtime configuration manager initialized");
                 Plugin.Logger.LogInfo("Press F9 in-game to open the configuration menu");
@@ -51,6 +53,74 @@ namespace SO2R_Warp_Drive_Mods
             catch (Exception ex)
             {
                 Plugin.Logger.LogError($"Failed to initialize runtime config manager: {ex}");
+            }
+        }
+
+        private static void CreatePersistentCanvas()
+        {
+            try
+            {
+                // Create a persistent canvas that won't be destroyed during scene transitions
+                var canvasObj = new GameObject("PersistentConfigCanvas");
+                UnityEngine.Object.DontDestroyOnLoad(canvasObj);
+                
+                var canvas = canvasObj.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.sortingOrder = 1000; // Ensure it's on top
+                
+                var canvasScaler = canvasObj.AddComponent<CanvasScaler>();
+                canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                canvasScaler.referenceResolution = new Vector2(1920, 1080);
+                
+                canvasObj.AddComponent<GraphicRaycaster>();
+                
+                _persistentCanvas = canvasObj;
+                Plugin.Logger.LogInfo("Persistent canvas created successfully");
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Failed to create persistent canvas: {ex}");
+            }
+        }
+
+        private static TMP_FontAsset GetSafeFont()
+        {
+            // Return cached font if it's still valid
+            if (_cachedFont != null && _cachedFont)
+            {
+                return _cachedFont;
+            }
+
+            try
+            {
+                // Try to find an existing font from active UI
+                var existingText = UnityEngine.Object.FindObjectOfType<TextMeshProUGUI>();
+                if (existingText != null && existingText.font != null)
+                {
+                    _cachedFont = existingText.font;
+                    Plugin.Logger.LogInfo($"Found and cached UI Font: {_cachedFont.name}");
+                    return _cachedFont;
+                }
+
+                // Try to load fallback fonts
+                foreach (var fontName in _fallbackFontNames)
+                {
+                    var font = Resources.Load<TMP_FontAsset>(fontName);
+                    if (font != null)
+                    {
+                        _cachedFont = font;
+                        Plugin.Logger.LogInfo($"Loaded fallback font: {fontName}");
+                        return _cachedFont;
+                    }
+                }
+                
+                Plugin.Logger.LogWarning("Could not find any suitable font, UI may not display correctly");
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error getting safe font: {ex}");
+                return null;
             }
         }
 
@@ -73,17 +143,25 @@ namespace SO2R_Warp_Drive_Mods
         {
             try
             {
+                // Ensure persistent canvas exists
+                if (_persistentCanvas == null || !_persistentCanvas)
+                {
+                    CreatePersistentCanvas();
+                    if (_persistentCanvas == null) return; // Still failed, abort
+                }
+
                 if (Keyboard.current != null && Keyboard.current.f9Key.wasPressedThisFrame)
                 {
                     _isVisible = !_isVisible;
                     Plugin.Logger.LogInfo($"Runtime Config toggled. Visible: {_isVisible}");
 
-                    // If window was destroyed (e.g., during scene transition), recreate it
+                    // If window was destroyed or doesn't exist, recreate it
                     if (_isVisible && (_window == null || !_window))
                     {
                         CreateConfigWindow();
                     }
 
+                    // Only proceed if window creation was successful
                     if (_window != null && _window)
                     {
                         _window.SetActive(_isVisible);
@@ -112,6 +190,11 @@ namespace SO2R_Warp_Drive_Mods
                             }
                         }
                     }
+                    else
+                    {
+                        Plugin.Logger.LogWarning("Failed to create config window");
+                        _isVisible = false;
+                    }
                 }
 
                 if (_isVisible && _window != null && _window && Keyboard.current != null)
@@ -133,32 +216,39 @@ namespace SO2R_Warp_Drive_Mods
 
         private static void HandleInput()
         {
-            var kb = Keyboard.current;
-
-            if (kb.pageDownKey.wasPressedThisFrame || kb.rightBracketKey.wasPressedThisFrame) PreviousPage();
-            if (kb.pageUpKey.wasPressedThisFrame || kb.leftBracketKey.wasPressedThisFrame) NextPage();
-
-            if (kb.digit1Key.wasPressedThisFrame) ToggleOption("PauseOnFocusLoss");
-            if (kb.digit2Key.wasPressedThisFrame) ToggleOption("BgmInfo");
-            if (kb.digit3Key.wasPressedThisFrame) ToggleOption("ShowOncePerSession");
-            if (kb.digit4Key.wasPressedThisFrame) ToggleOption("MovementMultiplier");
-            if (kb.digit5Key.wasPressedThisFrame) ToggleOption("NoHealOnLevelUp");
-            if (kb.digit7Key.wasPressedThisFrame) ToggleOption("FormationBonusReset");
-            if (kb.digit8Key.wasPressedThisFrame) ToggleOption("FormationBonusHalved");
-            if (kb.digit9Key.wasPressedThisFrame) ToggleOption("FormationBonusHarder");
-            if (kb.digit0Key.wasPressedThisFrame) ToggleOption("FormationBonusDisable");
-            if (kb.qKey.wasPressedThisFrame) ToggleOption("ChainBattleNerf");
-            if (kb.wKey.wasPressedThisFrame) ToggleOption("ChainBattleDisable");
-            if (kb.eKey.wasPressedThisFrame) ToggleOption("MissionRewardNerf");
-            if (kb.rKey.wasPressedThisFrame) ToggleOption("NerfAllMissions");
-            if (kb.tKey.wasPressedThisFrame) ToggleOption("DebugMode");
-
-            if (_optionKeys.Count > 0)
+            try
             {
-                if (kb.leftArrowKey.wasPressedThisFrame) AdjustSlider(-0.05f);
-                if (kb.rightArrowKey.wasPressedThisFrame) AdjustSlider(0.05f);
-                if (kb.upArrowKey.wasPressedThisFrame) SelectPreviousSlider();
-                if (kb.downArrowKey.wasPressedThisFrame) SelectNextSlider();
+                var kb = Keyboard.current;
+
+                if (kb.pageDownKey.wasPressedThisFrame || kb.rightBracketKey.wasPressedThisFrame) PreviousPage();
+                if (kb.pageUpKey.wasPressedThisFrame || kb.leftBracketKey.wasPressedThisFrame) NextPage();
+
+                if (kb.digit1Key.wasPressedThisFrame) ToggleOption("PauseOnFocusLoss");
+                if (kb.digit2Key.wasPressedThisFrame) ToggleOption("BgmInfo");
+                if (kb.digit3Key.wasPressedThisFrame) ToggleOption("ShowOncePerSession");
+                //if (kb.digit4Key.wasPressedThisFrame) ToggleOption("MovementMultiplier");
+                if (kb.digit5Key.wasPressedThisFrame) ToggleOption("NoHealOnLevelUp");
+                if (kb.digit7Key.wasPressedThisFrame) ToggleOption("FormationBonusReset");
+                if (kb.digit8Key.wasPressedThisFrame) ToggleOption("FormationBonusHalved");
+                if (kb.digit9Key.wasPressedThisFrame) ToggleOption("FormationBonusHarder");
+                if (kb.digit0Key.wasPressedThisFrame) ToggleOption("FormationBonusDisable");
+                if (kb.qKey.wasPressedThisFrame) ToggleOption("ChainBattleNerf");
+                if (kb.wKey.wasPressedThisFrame) ToggleOption("ChainBattleDisable");
+                if (kb.eKey.wasPressedThisFrame) ToggleOption("MissionRewardNerf");
+                if (kb.rKey.wasPressedThisFrame) ToggleOption("NerfAllMissions");
+                if (kb.tKey.wasPressedThisFrame) ToggleOption("DebugMode");
+
+                if (_optionKeys.Count > 0)
+                {
+                    if (kb.leftArrowKey.wasPressedThisFrame) AdjustSlider(-0.05f);
+                    if (kb.rightArrowKey.wasPressedThisFrame) AdjustSlider(0.05f);
+                    if (kb.upArrowKey.wasPressedThisFrame) SelectPreviousSlider();
+                    if (kb.downArrowKey.wasPressedThisFrame) SelectNextSlider();
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error in HandleInput: {ex}");
             }
         }
 
@@ -176,66 +266,83 @@ namespace SO2R_Warp_Drive_Mods
 
         private static void ShowPage(int pageIndex)
         {
-            foreach (var page in _pageContents)
+            try
             {
-                if (page != null) page.SetActive(false);
-            }
-
-            if (pageIndex >= 0 && pageIndex < _pageContents.Count && _pageContents[pageIndex] != null)
-            {
-                _pageContents[pageIndex].SetActive(true);
-            }
-
-            if (_pageIndicator != null)
-            {
-                _pageIndicator.text = $"Page {_currentPage + 1} / {_totalPages} - Use [Page Up/Down] or [ ] to navigate";
-            }
-
-            _selectedIndex = 0;
-            _optionKeys.Clear();
-
-            if (pageIndex >= 0 && pageIndex < _pageContents.Count && _pageContents[pageIndex] != null)
-            {
-                foreach (var kvp in _sliders)
+                foreach (var page in _pageContents)
                 {
-                    if (kvp.Value != null && kvp.Value.activeInHierarchy && kvp.Value.transform.IsChildOf(_pageContents[pageIndex].transform))
+                    if (page != null && page) page.SetActive(false);
+                }
+
+                if (pageIndex >= 0 && pageIndex < _pageContents.Count && 
+                    _pageContents[pageIndex] != null && _pageContents[pageIndex])
+                {
+                    _pageContents[pageIndex].SetActive(true);
+                }
+
+                if (_pageIndicator != null && _pageIndicator)
+                {
+                    _pageIndicator.text = $"Page {_currentPage + 1} / {_totalPages} - Use [Page Up/Down] or [ ] to navigate";
+                }
+
+                _selectedIndex = 0;
+                _optionKeys.Clear();
+
+                if (pageIndex >= 0 && pageIndex < _pageContents.Count && 
+                    _pageContents[pageIndex] != null && _pageContents[pageIndex])
+                {
+                    foreach (var kvp in _sliders)
                     {
-                        _optionKeys.Add(kvp.Key);
+                        if (kvp.Value != null && kvp.Value && kvp.Value.activeInHierarchy && 
+                            kvp.Value.transform.IsChildOf(_pageContents[pageIndex].transform))
+                        {
+                            _optionKeys.Add(kvp.Key);
+                        }
                     }
                 }
+                HighlightSelectedSlider();
             }
-            HighlightSelectedSlider();
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error in ShowPage: {ex}");
+            }
         }
 
         private static void ToggleOption(string key)
         {
-            switch (key)
+            try
             {
-                case "PauseOnFocusLoss": Plugin.EnablePauseOnFocusLoss.Value = !Plugin.EnablePauseOnFocusLoss.Value; break;
-                case "BgmInfo": Plugin.EnableBgmInfo.Value = !Plugin.EnableBgmInfo.Value; break;
-                case "ShowOncePerSession": Plugin.ShowOncePerSession.Value = !Plugin.ShowOncePerSession.Value; break;
-                case "MovementMultiplier": Plugin.EnableMovementMultiplier.Value = !Plugin.EnableMovementMultiplier.Value; break;
-                case "NoHealOnLevelUp": Plugin.EnableNoHealOnLevelUp.Value = !Plugin.EnableNoHealOnLevelUp.Value; break;
-                case "FormationBonusReset": Plugin.EnableFormationBonusReset.Value = !Plugin.EnableFormationBonusReset.Value; break;
-                case "FormationBonusHalved": Plugin.EnableFormationBonusHalved.Value = !Plugin.EnableFormationBonusHalved.Value; break;
-                case "FormationBonusHarder": Plugin.EnableFormationBonusHarder.Value = !Plugin.EnableFormationBonusHarder.Value; break;
-                case "FormationBonusDisable": Plugin.EnableFormationBonusDisable.Value = !Plugin.EnableFormationBonusDisable.Value; break;
-                case "ChainBattleNerf": Plugin.EnableChainBattleNerf.Value = !Plugin.EnableChainBattleNerf.Value; break;
-                case "ChainBattleDisable": Plugin.EnableChainBattleDisable.Value = !Plugin.EnableChainBattleDisable.Value; break;
-                case "MissionRewardNerf": Plugin.EnableMissionRewardNerf.Value = !Plugin.EnableMissionRewardNerf.Value; break;
-                case "NerfAllMissions": Plugin.NerfAllMissionRewards.Value = !Plugin.NerfAllMissionRewards.Value; break;
-                case "DebugMode": Plugin.EnableDebugMode.Value = !Plugin.EnableDebugMode.Value; break;
-            }
-
-            if (_toggles.ContainsKey(key))
-            {
-                var toggle = _toggles[key].GetComponent<Toggle>();
-                if (toggle != null)
+                switch (key)
                 {
-                    toggle.isOn = GetToggleValue(key);
+                    case "PauseOnFocusLoss": Plugin.EnablePauseOnFocusLoss.Value = !Plugin.EnablePauseOnFocusLoss.Value; break;
+                    case "BgmInfo": Plugin.EnableBgmInfo.Value = !Plugin.EnableBgmInfo.Value; break;
+                    case "ShowOncePerSession": Plugin.ShowOncePerSession.Value = !Plugin.ShowOncePerSession.Value; break;
+                    //case "MovementMultiplier": Plugin.EnableMovementMultiplier.Value = !Plugin.EnableMovementMultiplier.Value; break;
+                    case "NoHealOnLevelUp": Plugin.EnableNoHealOnLevelUp.Value = !Plugin.EnableNoHealOnLevelUp.Value; break;
+                    case "FormationBonusReset": Plugin.EnableFormationBonusReset.Value = !Plugin.EnableFormationBonusReset.Value; break;
+                    case "FormationBonusHalved": Plugin.EnableFormationBonusHalved.Value = !Plugin.EnableFormationBonusHalved.Value; break;
+                    case "FormationBonusHarder": Plugin.EnableFormationBonusHarder.Value = !Plugin.EnableFormationBonusHarder.Value; break;
+                    case "FormationBonusDisable": Plugin.EnableFormationBonusDisable.Value = !Plugin.EnableFormationBonusDisable.Value; break;
+                    case "ChainBattleNerf": Plugin.EnableChainBattleNerf.Value = !Plugin.EnableChainBattleNerf.Value; break;
+                    case "ChainBattleDisable": Plugin.EnableChainBattleDisable.Value = !Plugin.EnableChainBattleDisable.Value; break;
+                    case "MissionRewardNerf": Plugin.EnableMissionRewardNerf.Value = !Plugin.EnableMissionRewardNerf.Value; break;
+                    case "NerfAllMissions": Plugin.NerfAllMissionRewards.Value = !Plugin.NerfAllMissionRewards.Value; break;
+                    case "DebugMode": Plugin.EnableDebugMode.Value = !Plugin.EnableDebugMode.Value; break;
                 }
+
+                if (_toggles.ContainsKey(key) && _toggles[key] != null && _toggles[key])
+                {
+                    var toggle = _toggles[key].GetComponent<Toggle>();
+                    if (toggle != null)
+                    {
+                        toggle.isOn = GetToggleValue(key);
+                    }
+                }
+                UpdateUIValues();
             }
-            UpdateUIValues();
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error in ToggleOption for {key}: {ex}");
+            }
         }
 
         private static bool GetToggleValue(string key)
@@ -245,7 +352,7 @@ namespace SO2R_Warp_Drive_Mods
                 case "PauseOnFocusLoss": return Plugin.EnablePauseOnFocusLoss.Value;
                 case "BgmInfo": return Plugin.EnableBgmInfo.Value;
                 case "ShowOncePerSession": return Plugin.ShowOncePerSession.Value;
-                case "MovementMultiplier": return Plugin.EnableMovementMultiplier.Value;
+                //case "MovementMultiplier": return Plugin.EnableMovementMultiplier.Value;
                 case "NoHealOnLevelUp": return Plugin.EnableNoHealOnLevelUp.Value;
                 case "FormationBonusReset": return Plugin.EnableFormationBonusReset.Value;
                 case "FormationBonusHalved": return Plugin.EnableFormationBonusHalved.Value;
@@ -276,49 +383,75 @@ namespace SO2R_Warp_Drive_Mods
 
         private static void HighlightSelectedSlider()
         {
-            for (int i = 0; i < _optionKeys.Count; i++)
+            try
             {
-                var key = _optionKeys[i];
-                if (_sliderLabels.ContainsKey(key))
+                for (int i = 0; i < _optionKeys.Count; i++)
                 {
-                    _sliderLabels[key].color = (i == _selectedIndex) ? Color.yellow : Color.white;
+                    var key = _optionKeys[i];
+                    if (_sliderLabels.ContainsKey(key) && _sliderLabels[key] != null && _sliderLabels[key])
+                    {
+                        _sliderLabels[key].color = (i == _selectedIndex) ? Color.yellow : Color.white;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error in HighlightSelectedSlider: {ex}");
             }
         }
 
         private static void AdjustSlider(float delta)
         {
-            if (_selectedIndex >= 0 && _selectedIndex < _optionKeys.Count)
+            try
             {
-                var key = _optionKeys[_selectedIndex];
-                switch (key)
+                if (_selectedIndex >= 0 && _selectedIndex < _optionKeys.Count)
                 {
-                    case "MovementSpeed":
-                        Plugin.MovementSpeedMultiplier.Value = Mathf.Clamp(Plugin.MovementSpeedMultiplier.Value + delta, 0.5f, 3.0f);
-                        UpdateSliderVisual(key, Plugin.MovementSpeedMultiplier.Value);
-                        break;
-                    case "FormationBonusPoint":
-                        Plugin.FormationBonusPointMultiplier.Value = Mathf.Clamp(Plugin.FormationBonusPointMultiplier.Value + delta, 0.1f, 1.0f);
-                        UpdateSliderVisual(key, Plugin.FormationBonusPointMultiplier.Value);
-                        break;
-                    case "ChainBattleBonus":
-                        Plugin.ChainBattleBonusMultiplier.Value = Mathf.Clamp(Plugin.ChainBattleBonusMultiplier.Value + delta, 0.0f, 1.0f);
-                        UpdateSliderVisual(key, Plugin.ChainBattleBonusMultiplier.Value);
-                        break;
-                    case "MissionReward":
-                        Plugin.MissionRewardMultiplier.Value = Mathf.Clamp(Plugin.MissionRewardMultiplier.Value + delta, 0.1f, 1.0f);
-                        UpdateSliderVisual(key, Plugin.MissionRewardMultiplier.Value);
-                        break;
+                    var key = _optionKeys[_selectedIndex];
+                    switch (key)
+                    {
+                        //case "MovementSpeed":
+                            //Plugin.MovementSpeedMultiplier.Value = Mathf.Clamp(Plugin.MovementSpeedMultiplier.Value + delta, 1f, 2.0f);
+                            //UpdateSliderVisual(key, Plugin.MovementSpeedMultiplier.Value);
+                            //break;
+                        case "FormationBonusPoint":
+                            Plugin.FormationBonusPointMultiplier.Value = Mathf.Clamp(Plugin.FormationBonusPointMultiplier.Value + delta, 0.1f, 1.0f);
+                            UpdateSliderVisual(key, Plugin.FormationBonusPointMultiplier.Value);
+                            break;
+                        case "ChainBattleBonus":
+                            Plugin.ChainBattleBonusMultiplier.Value = Mathf.Clamp(Plugin.ChainBattleBonusMultiplier.Value + delta, 0.0f, 1.0f);
+                            UpdateSliderVisual(key, Plugin.ChainBattleBonusMultiplier.Value);
+                            break;
+                        case "MissionReward":
+                            Plugin.MissionRewardMultiplier.Value = Mathf.Clamp(Plugin.MissionRewardMultiplier.Value + delta, 0.1f, 1.0f);
+                            UpdateSliderVisual(key, Plugin.MissionRewardMultiplier.Value);
+                            break;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error in AdjustSlider: {ex}");
             }
         }
 
         private static void UpdateSliderVisual(string key, float value)
         {
-            if (_sliders.ContainsKey(key) && _sliders[key] != null)
+            try
             {
-                _sliders[key].GetComponentInChildren<Slider>().value = value;
-                _sliderLabels[key].text = $"{GetSliderLabel(key)}: {value:F2}x";
+                if (_sliders.ContainsKey(key) && _sliders[key] != null && _sliders[key] &&
+                    _sliderLabels.ContainsKey(key) && _sliderLabels[key] != null && _sliderLabels[key])
+                {
+                    var slider = _sliders[key].GetComponentInChildren<Slider>();
+                    if (slider != null)
+                    {
+                        slider.value = value;
+                    }
+                    _sliderLabels[key].text = $"{GetSliderLabel(key)}: {value:F2}x";
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error in UpdateSliderVisual for {key}: {ex}");
             }
         }
 
@@ -326,7 +459,7 @@ namespace SO2R_Warp_Drive_Mods
         {
             switch (key)
             {
-                case "MovementSpeed": return "Movement Speed";
+                //case "MovementSpeed": return "Movement Speed";
                 case "FormationBonusPoint": return "Point Gain";
                 case "ChainBattleBonus": return "Chain Bonus";
                 case "MissionReward": return "Reward Multiplier";
@@ -338,17 +471,22 @@ namespace SO2R_Warp_Drive_Mods
         {
             try
             {
-                // Always get fresh font reference instead of caching
-                TMP_FontAsset currentFont = null;
-                var existingText = UnityEngine.Object.FindObjectOfType<TextMeshProUGUI>();
-                if (existingText != null && existingText.font != null)
+                // Ensure we have a valid persistent canvas
+                if (_persistentCanvas == null || !_persistentCanvas)
                 {
-                    currentFont = existingText.font;
-                    Plugin.Logger.LogInfo($"Found UI Font: {currentFont.name}");
+                    CreatePersistentCanvas();
+                    if (_persistentCanvas == null)
+                    {
+                        Plugin.Logger.LogError("Cannot create config window: no persistent canvas available");
+                        return;
+                    }
                 }
-                else
+
+                // Get a safe font reference
+                var currentFont = GetSafeFont();
+                if (currentFont == null)
                 {
-                    Plugin.Logger.LogError("Could not find an active TextMeshProUGUI object to source a font from. UI cannot be created.");
+                    Plugin.Logger.LogError("Cannot create config window: no valid font available");
                     return;
                 }
 
@@ -361,19 +499,8 @@ namespace SO2R_Warp_Drive_Mods
                 _selectedIndex = 0;
                 _currentPage = 0;
 
-                // Always get fresh canvas reference
-                var canvas = UnityEngine.Object.FindObjectOfType<Canvas>();
-                if (canvas == null)
-                {
-                    Plugin.Logger.LogError("Could not find a Canvas to attach the config window to!");
-                    return;
-                }
-
                 _window = new GameObject("RuntimeConfigWindow");
-                _window.transform.SetParent(canvas.transform, false);
-                
-                // Make window persistent across scene changes
-                UnityEngine.Object.DontDestroyOnLoad(_window);
+                _window.transform.SetParent(_persistentCanvas.transform, false);
 
                 var background = _window.AddComponent<Image>();
                 background.color = new Color(0.1f, 0.1f, 0.1f, 0.95f);
@@ -385,7 +512,7 @@ namespace SO2R_Warp_Drive_Mods
                 var titleObject = new GameObject("ConfigTitle");
                 titleObject.transform.SetParent(_window.transform, false);
                 var titleText = titleObject.AddComponent<TextMeshProUGUI>();
-                titleText.font = currentFont; // Use fresh font reference
+                titleText.font = currentFont;
                 titleText.text = "SO2R QoL Patches - Runtime Configuration";
                 titleText.fontSize = 28;
                 titleText.alignment = TextAlignmentOptions.Center;
@@ -397,7 +524,7 @@ namespace SO2R_Warp_Drive_Mods
                 var instructionObject = new GameObject("Instructions");
                 instructionObject.transform.SetParent(_window.transform, false);
                 var instructionText = instructionObject.AddComponent<TextMeshProUGUI>();
-                instructionText.font = currentFont; // Use fresh font reference
+                instructionText.font = currentFont;
                 instructionText.text = "Press F9 to close. Use number keys to toggle options, arrow keys for sliders.";
                 instructionText.fontSize = 16;
                 instructionText.alignment = TextAlignmentOptions.Center;
@@ -409,7 +536,7 @@ namespace SO2R_Warp_Drive_Mods
                 var pageIndicatorObj = new GameObject("PageIndicator");
                 pageIndicatorObj.transform.SetParent(_window.transform, false);
                 _pageIndicator = pageIndicatorObj.AddComponent<TextMeshProUGUI>();
-                _pageIndicator.font = currentFont; // Use fresh font reference
+                _pageIndicator.font = currentFont;
                 _pageIndicator.fontSize = 18;
                 _pageIndicator.alignment = TextAlignmentOptions.Center;
                 _pageIndicator.color = Color.yellow;
@@ -426,7 +553,7 @@ namespace SO2R_Warp_Drive_Mods
                 contentRect.offsetMin = new Vector2(25, 60);
                 contentRect.offsetMax = new Vector2(-25, -100);
 
-                CreateConfigPages(currentFont); // Pass font to methods that need it
+                CreateConfigPages(currentFont);
 
                 Plugin.Logger.LogInfo("Runtime config window created successfully.");
             }
@@ -434,49 +561,56 @@ namespace SO2R_Warp_Drive_Mods
             {
                 Plugin.Logger.LogError($"Error in CreateConfigWindow: {ex}");
             }
-}
+        }
         
         private static void CreateConfigPages(TMP_FontAsset font)
         {
-            var page1 = CreatePage("Page1");
-            CreateSectionHeader("General Settings", page1, font);
-            var generalGrid = CreateGridContainer(page1);
-            CreateToggle("Pause On Focus Loss", "PauseOnFocusLoss", Plugin.EnablePauseOnFocusLoss, generalGrid, font);
-            CreateSectionHeader("Quality of Life", page1, font);
-            var qolGrid = CreateGridContainer(page1);
-            CreateToggle("Enable BGM Info Display", "BgmInfo", Plugin.EnableBgmInfo, qolGrid, font);
-            CreateToggle("Show BGM Once Per Session", "ShowOncePerSession", Plugin.ShowOncePerSession, qolGrid, font);
-            CreateToggle("Enable Movement Speed Multiplier", "MovementMultiplier", Plugin.EnableMovementMultiplier, qolGrid, font);
-            CreateSlider("Movement Speed", "MovementSpeed", Plugin.MovementSpeedMultiplier, 0.5f, 3.0f, qolGrid, font);
-            CreateSectionHeader("Difficulty - General", page1, font);
-            var diffGeneralGrid = CreateGridContainer(page1);
-            CreateToggle("Remove Full Heal on Level Up", "NoHealOnLevelUp", Plugin.EnableNoHealOnLevelUp, diffGeneralGrid, font);
-            
-            var page2 = CreatePage("Page2");
-            CreateSectionHeader("Difficulty - Formation Bonuses", page2, font);
-            var formationGrid = CreateGridContainer(page2);
-            CreateToggle("Reset Every Battle", "FormationBonusReset", Plugin.EnableFormationBonusReset, formationGrid, font);
-            CreateToggle("Halve Bonus Effects", "FormationBonusHalved", Plugin.EnableFormationBonusHalved, formationGrid, font);
-            CreateToggle("Harder to Acquire", "FormationBonusHarder", Plugin.EnableFormationBonusHarder, formationGrid, font);
-            CreateToggle("Disable Completely", "FormationBonusDisable", Plugin.EnableFormationBonusDisable, formationGrid, font);
-            CreateSlider("Point Gain", "FormationBonusPoint", Plugin.FormationBonusPointMultiplier, 0.1f, 1.0f, formationGrid, font);
-            CreateSectionHeader("Difficulty - Chain Battles", page2, font);
-            var chainGrid = CreateGridContainer(page2);
-            CreateToggle("Reduce Chain Bonuses", "ChainBattleNerf", Plugin.EnableChainBattleNerf, chainGrid, font);
-            CreateToggle("Disable Chain Bonuses", "ChainBattleDisable", Plugin.EnableChainBattleDisable, chainGrid, font);
-            CreateSlider("Chain Bonus", "ChainBattleBonus", Plugin.ChainBattleBonusMultiplier, 0.0f, 1.0f, chainGrid, font);
+            try
+            {
+                var page1 = CreatePage("Page1");
+                CreateSectionHeader("General Settings", page1, font);
+                var generalGrid = CreateGridContainer(page1);
+                CreateToggle("Pause On Focus Loss", "PauseOnFocusLoss", Plugin.EnablePauseOnFocusLoss, generalGrid, font);
+                CreateSectionHeader("Quality of Life", page1, font);
+                var qolGrid = CreateGridContainer(page1);
+                CreateToggle("Enable BGM Info Display", "BgmInfo", Plugin.EnableBgmInfo, qolGrid, font);
+                CreateToggle("Show BGM Once Per Session", "ShowOncePerSession", Plugin.ShowOncePerSession, qolGrid, font);
+                //CreateToggle("Enable Movement Speed Multiplier", "MovementMultiplier", Plugin.EnableMovementMultiplier, qolGrid, font);
+                //CreateSlider("Movement Speed", "MovementSpeed", Plugin.MovementSpeedMultiplier, 1f, 2.0f, qolGrid, font);
+                CreateSectionHeader("Difficulty - General", page1, font);
+                var diffGeneralGrid = CreateGridContainer(page1);
+                CreateToggle("Remove Full Heal on Level Up", "NoHealOnLevelUp", Plugin.EnableNoHealOnLevelUp, diffGeneralGrid, font);
+                
+                var page2 = CreatePage("Page2");
+                CreateSectionHeader("Difficulty - Formation Bonuses", page2, font);
+                var formationGrid = CreateGridContainer(page2);
+                CreateToggle("Reset Every Battle", "FormationBonusReset", Plugin.EnableFormationBonusReset, formationGrid, font);
+                CreateToggle("Halve Bonus Effects", "FormationBonusHalved", Plugin.EnableFormationBonusHalved, formationGrid, font);
+                CreateToggle("Harder to Acquire", "FormationBonusHarder", Plugin.EnableFormationBonusHarder, formationGrid, font);
+                CreateToggle("Disable Completely", "FormationBonusDisable", Plugin.EnableFormationBonusDisable, formationGrid, font);
+                CreateSlider("Point Gain", "FormationBonusPoint", Plugin.FormationBonusPointMultiplier, 0.1f, 1.0f, formationGrid, font);
+                CreateSectionHeader("Difficulty - Chain Battles", page2, font);
+                var chainGrid = CreateGridContainer(page2);
+                CreateToggle("Reduce Chain Bonuses", "ChainBattleNerf", Plugin.EnableChainBattleNerf, chainGrid, font);
+                CreateToggle("Disable Chain Bonuses", "ChainBattleDisable", Plugin.EnableChainBattleDisable, chainGrid, font);
+                CreateSlider("Chain Bonus", "ChainBattleBonus", Plugin.ChainBattleBonusMultiplier, 0.0f, 1.0f, chainGrid, font);
 
-            var page3 = CreatePage("Page3");
-            CreateSectionHeader("Difficulty - Mission Rewards", page3, font);
-            var missionGrid = CreateGridContainer(page3);
-            CreateToggle("Reduce Mission Rewards", "MissionRewardNerf", Plugin.EnableMissionRewardNerf, missionGrid, font);
-            CreateToggle("Nerf ALL Missions", "NerfAllMissions", Plugin.NerfAllMissionRewards, missionGrid, font);
-            CreateSlider("Reward Multiplier", "MissionReward", Plugin.MissionRewardMultiplier, 0.1f, 1.0f, missionGrid, font);
-            CreateSectionHeader("Debug", page3, font);
-            var debugGrid = CreateGridContainer(page3);
-            CreateToggle("Enable Debug Logging", "DebugMode", Plugin.EnableDebugMode, debugGrid, font);
+                var page3 = CreatePage("Page3");
+                CreateSectionHeader("Difficulty - Mission Rewards", page3, font);
+                var missionGrid = CreateGridContainer(page3);
+                CreateToggle("Reduce Mission Rewards", "MissionRewardNerf", Plugin.EnableMissionRewardNerf, missionGrid, font);
+                CreateToggle("Nerf ALL Missions", "NerfAllMissions", Plugin.NerfAllMissionRewards, missionGrid, font);
+                CreateSlider("Reward Multiplier", "MissionReward", Plugin.MissionRewardMultiplier, 0.1f, 1.0f, missionGrid, font);
+                CreateSectionHeader("Debug", page3, font);
+                var debugGrid = CreateGridContainer(page3);
+                CreateToggle("Enable Debug Logging", "DebugMode", Plugin.EnableDebugMode, debugGrid, font);
 
-            ShowPage(0);
+                ShowPage(0);
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error in CreateConfigPages: {ex}");
+            }
         }
         
         private static GameObject CreateGridContainer(GameObject parent)
@@ -487,8 +621,8 @@ namespace SO2R_Warp_Drive_Mods
             var padding = new RectOffset();
             padding.left = 10; padding.right = 10; padding.top = 5; padding.bottom = 15;
             gridLayout.padding = padding;
-            gridLayout.cellSize = new Vector2(380, 32); // Made cells shorter
-            gridLayout.spacing = new Vector2(15, 5); // Reduced vertical spacing
+            gridLayout.cellSize = new Vector2(380, 32);
+            gridLayout.spacing = new Vector2(15, 5);
             gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             gridLayout.constraintCount = 2;
             gridLayout.childAlignment = TextAnchor.UpperLeft;
@@ -505,6 +639,7 @@ namespace SO2R_Warp_Drive_Mods
             pageRect.anchorMin = Vector2.zero;
             pageRect.anchorMax = Vector2.one;
             pageRect.sizeDelta = Vector2.zero;
+            
             
             var vLayout = pageObj.AddComponent<VerticalLayoutGroup>();
             var padding = new RectOffset(); 
@@ -601,7 +736,7 @@ namespace SO2R_Warp_Drive_Mods
                 case "PauseOnFocusLoss": return "[1]";
                 case "BgmInfo": return "[2]";
                 case "ShowOncePerSession": return "[3]";
-                case "MovementMultiplier": return "[4]";
+                //case "MovementMultiplier": return "[4]";
                 case "NoHealOnLevelUp": return "[5]";
                 case "FormationBonusReset": return "[7]";
                 case "FormationBonusHalved": return "[8]";
@@ -702,7 +837,7 @@ namespace SO2R_Warp_Drive_Mods
         
         private static void UpdateUIValues()
         {
-            if (_sliders.ContainsKey("MovementSpeed")) _sliders["MovementSpeed"].SetActive(Plugin.EnableMovementMultiplier.Value);
+            //if (_sliders.ContainsKey("MovementSpeed")) _sliders["MovementSpeed"].SetActive(Plugin.EnableMovementMultiplier.Value);
             if (_sliders.ContainsKey("FormationBonusPoint")) _sliders["FormationBonusPoint"].SetActive(Plugin.EnableFormationBonusHarder.Value);
             if (_sliders.ContainsKey("ChainBattleBonus")) _sliders["ChainBattleBonus"].SetActive(Plugin.EnableChainBattleNerf.Value);
             if (_sliders.ContainsKey("MissionReward")) _sliders["MissionReward"].SetActive(Plugin.EnableMissionRewardNerf.Value);
@@ -718,10 +853,7 @@ namespace SO2R_Warp_Drive_Mods
                     Time.timeScale = _originalTimeScale;
                     _pausedByConfig = false;
                 }
-
-                _configWatcher?.Dispose();
-                _configWatcher = null;
-
+                
                 if (_window != null)
                 {
                     UnityEngine.Object.Destroy(_window);

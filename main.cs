@@ -95,14 +95,6 @@ namespace SO2R_Warp_Drive_Mods
 
                 if (TryApplyPatch(typeof(Patches.UI.FavorabilityGauge_AddNumber_Patch.CatchValuePatch), "Affection Value Catcher")) successCount++; else failCount++;
                 
-                if (TryApplyPatch(typeof(Patches.System.BattleManager_StartBattle_Patch), "Battle Start Patch")) successCount++; else failCount++;
-                if (TryApplyPatch(typeof(Patches.System.BattleManager_FinishBattle_Patch), "Battle End Patch")) successCount++; else failCount++;
-
-                if (EnableAggroRangeMultiplier.Value)
-                {
-                    if (TryApplyPatch(typeof(Patches.Gameplay.SafeProximityPatch), "Proximity Patch")) successCount++; else failCount++;
-                }
-                
                 // Add the new No Heal on Level Up patch
                 if (EnableNoHealOnLevelUp.Value)
                 {
@@ -169,8 +161,6 @@ namespace SO2R_Warp_Drive_Mods
             // Gameplay
             EnableMovementMultiplier = Config.Bind("Gameplay", "Enable Movement Speed Multiplier", true, "Enables a multiplier for player movement speed.");
             MovementSpeedMultiplier = Config.Bind("Gameplay", "Movement Speed Multiplier", 1.75f, "The multiplier for movement speed. 1.0 is normal, 2.0 is double.");
-            EnableAggroRangeMultiplier = Config.Bind("Gameplay", "Enable Aggro Range Multiplier", false, "Enables a multiplier for enemy detection range. (EXPERIMENTAL, MIGHT CAUSE CRASHES ON BOOT)");
-            AggroRangeMultiplier = Config.Bind("Gameplay", "Aggro Range Multiplier", 0.5f, "Multiplier for enemy detection range. 0.5 is half, 2.0 is double.");
             
             // Difficulty Options
             EnableNoHealOnLevelUp = Config.Bind("Difficulty", "Remove Full Heal on Level Up", false, "Disables the full HP/MP restoration that occurs when characters level up, making the game more challenging.");

@@ -226,7 +226,7 @@ namespace SO2R_Warp_Drive_Mods
                 if (kb.digit1Key.wasPressedThisFrame) ToggleOption("PauseOnFocusLoss");
                 if (kb.digit2Key.wasPressedThisFrame) ToggleOption("BgmInfo");
                 if (kb.digit3Key.wasPressedThisFrame) ToggleOption("ShowOncePerSession");
-                //if (kb.digit4Key.wasPressedThisFrame) ToggleOption("MovementMultiplier");
+                if (kb.digit4Key.wasPressedThisFrame) ToggleOption("MovementMultiplier");
                 if (kb.digit5Key.wasPressedThisFrame) ToggleOption("NoHealOnLevelUp");
                 if (kb.digit7Key.wasPressedThisFrame) ToggleOption("FormationBonusReset");
                 if (kb.digit8Key.wasPressedThisFrame) ToggleOption("FormationBonusHalved");
@@ -316,7 +316,7 @@ namespace SO2R_Warp_Drive_Mods
                     case "PauseOnFocusLoss": Plugin.EnablePauseOnFocusLoss.Value = !Plugin.EnablePauseOnFocusLoss.Value; break;
                     case "BgmInfo": Plugin.EnableBgmInfo.Value = !Plugin.EnableBgmInfo.Value; break;
                     case "ShowOncePerSession": Plugin.ShowOncePerSession.Value = !Plugin.ShowOncePerSession.Value; break;
-                    //case "MovementMultiplier": Plugin.EnableMovementMultiplier.Value = !Plugin.EnableMovementMultiplier.Value; break;
+                    case "MovementMultiplier": Plugin.EnableMovementMultiplier.Value = !Plugin.EnableMovementMultiplier.Value; break;
                     case "NoHealOnLevelUp": Plugin.EnableNoHealOnLevelUp.Value = !Plugin.EnableNoHealOnLevelUp.Value; break;
                     case "FormationBonusReset": Plugin.EnableFormationBonusReset.Value = !Plugin.EnableFormationBonusReset.Value; break;
                     case "FormationBonusHalved": Plugin.EnableFormationBonusHalved.Value = !Plugin.EnableFormationBonusHalved.Value; break;
@@ -352,7 +352,7 @@ namespace SO2R_Warp_Drive_Mods
                 case "PauseOnFocusLoss": return Plugin.EnablePauseOnFocusLoss.Value;
                 case "BgmInfo": return Plugin.EnableBgmInfo.Value;
                 case "ShowOncePerSession": return Plugin.ShowOncePerSession.Value;
-                //case "MovementMultiplier": return Plugin.EnableMovementMultiplier.Value;
+                case "MovementMultiplier": return Plugin.EnableMovementMultiplier.Value;
                 case "NoHealOnLevelUp": return Plugin.EnableNoHealOnLevelUp.Value;
                 case "FormationBonusReset": return Plugin.EnableFormationBonusReset.Value;
                 case "FormationBonusHalved": return Plugin.EnableFormationBonusHalved.Value;
@@ -409,10 +409,10 @@ namespace SO2R_Warp_Drive_Mods
                     var key = _optionKeys[_selectedIndex];
                     switch (key)
                     {
-                        //case "MovementSpeed":
-                            //Plugin.MovementSpeedMultiplier.Value = Mathf.Clamp(Plugin.MovementSpeedMultiplier.Value + delta, 1f, 2.0f);
-                            //UpdateSliderVisual(key, Plugin.MovementSpeedMultiplier.Value);
-                            //break;
+                        case "MovementSpeed":
+                            Plugin.MovementSpeedMultiplier.Value = Mathf.Clamp(Plugin.MovementSpeedMultiplier.Value + delta, 1f, 4.0f);
+                            UpdateSliderVisual(key, Plugin.MovementSpeedMultiplier.Value);
+                            break;
                         case "FormationBonusPoint":
                             Plugin.FormationBonusPointMultiplier.Value = Mathf.Clamp(Plugin.FormationBonusPointMultiplier.Value + delta, 0.1f, 1.0f);
                             UpdateSliderVisual(key, Plugin.FormationBonusPointMultiplier.Value);
@@ -459,7 +459,7 @@ namespace SO2R_Warp_Drive_Mods
         {
             switch (key)
             {
-                //case "MovementSpeed": return "Movement Speed";
+                case "MovementSpeed": return "Movement Speed";
                 case "FormationBonusPoint": return "Point Gain";
                 case "ChainBattleBonus": return "Chain Bonus";
                 case "MissionReward": return "Reward Multiplier";
@@ -575,8 +575,8 @@ namespace SO2R_Warp_Drive_Mods
                 var qolGrid = CreateGridContainer(page1);
                 CreateToggle("Enable BGM Info Display", "BgmInfo", Plugin.EnableBgmInfo, qolGrid, font);
                 CreateToggle("Show BGM Once Per Session", "ShowOncePerSession", Plugin.ShowOncePerSession, qolGrid, font);
-                //CreateToggle("Enable Movement Speed Multiplier", "MovementMultiplier", Plugin.EnableMovementMultiplier, qolGrid, font);
-                //CreateSlider("Movement Speed", "MovementSpeed", Plugin.MovementSpeedMultiplier, 1f, 2.0f, qolGrid, font);
+                CreateToggle("Enable Movement Speed Multiplier", "MovementMultiplier", Plugin.EnableMovementMultiplier, qolGrid, font);
+                CreateSlider("Movement Speed", "MovementSpeed", Plugin.MovementSpeedMultiplier, 1f, 4.0f, qolGrid, font);
                 CreateSectionHeader("Difficulty - General", page1, font);
                 var diffGeneralGrid = CreateGridContainer(page1);
                 CreateToggle("Remove Full Heal on Level Up", "NoHealOnLevelUp", Plugin.EnableNoHealOnLevelUp, diffGeneralGrid, font);
@@ -681,21 +681,33 @@ namespace SO2R_Warp_Drive_Mods
         {
             try
             {
+                // This is the main container for the entire row (checkbox + label)
                 var toggleObj = new GameObject($"Toggle_{key}");
                 toggleObj.transform.SetParent(parent.transform, false);
                 var hLayout = toggleObj.AddComponent<HorizontalLayoutGroup>();
                 hLayout.childAlignment = TextAnchor.MiddleLeft;
                 hLayout.spacing = 10;
+                hLayout.childForceExpandHeight = false; // Correctly prevents children from stretching vertically
+
+                // --- THE FIX: A fixed-size container for the checkbox graphic ---
+                var checkboxContainer = new GameObject("CheckboxContainer");
+                checkboxContainer.transform.SetParent(toggleObj.transform, false);
+                var containerLayout = checkboxContainer.AddComponent<LayoutElement>();
+                // Set a fixed size for the container, which will not be stretched.
+                containerLayout.minWidth = 24;
+                containerLayout.minHeight = 24;
+                // -------------------------------------------------------------
                 
                 var toggle = toggleObj.AddComponent<Toggle>();
 
+                // The Background is now a child of the container and its size is controlled by the RectTransform
                 var bgObj = new GameObject("Background");
-                bgObj.transform.SetParent(toggleObj.transform, false);
-                bgObj.AddComponent<LayoutElement>().preferredWidth = 24;
+                bgObj.transform.SetParent(checkboxContainer.transform, false);
                 var bgImage = bgObj.AddComponent<Image>();
                 bgImage.color = new Color(0.3f, 0.3f, 0.3f);
                 var bgRect = bgObj.GetComponent<RectTransform>();
-                bgRect.sizeDelta = new Vector2(24, 24);
+                bgRect.sizeDelta = new Vector2(24, 24); // Set the size directly
+                bgRect.anchoredPosition = Vector2.zero;
 
                 var checkObj = new GameObject("Checkmark");
                 checkObj.transform.SetParent(bgObj.transform, false);
@@ -710,6 +722,7 @@ namespace SO2R_Warp_Drive_Mods
                 toggle.isOn = config.Value;
                 toggle.interactable = false;
 
+                // The Label is a sibling of the checkbox container and will align next to it.
                 var labelObj = new GameObject("Label");
                 labelObj.transform.SetParent(toggleObj.transform, false);
                 var labelLayout = labelObj.AddComponent<LayoutElement>();
@@ -736,7 +749,7 @@ namespace SO2R_Warp_Drive_Mods
                 case "PauseOnFocusLoss": return "[1]";
                 case "BgmInfo": return "[2]";
                 case "ShowOncePerSession": return "[3]";
-                //case "MovementMultiplier": return "[4]";
+                case "MovementMultiplier": return "[4]";
                 case "NoHealOnLevelUp": return "[5]";
                 case "FormationBonusReset": return "[7]";
                 case "FormationBonusHalved": return "[8]";
@@ -837,7 +850,7 @@ namespace SO2R_Warp_Drive_Mods
         
         private static void UpdateUIValues()
         {
-            //if (_sliders.ContainsKey("MovementSpeed")) _sliders["MovementSpeed"].SetActive(Plugin.EnableMovementMultiplier.Value);
+            if (_sliders.ContainsKey("MovementSpeed")) _sliders["MovementSpeed"].SetActive(Plugin.EnableMovementMultiplier.Value);
             if (_sliders.ContainsKey("FormationBonusPoint")) _sliders["FormationBonusPoint"].SetActive(Plugin.EnableFormationBonusHarder.Value);
             if (_sliders.ContainsKey("ChainBattleBonus")) _sliders["ChainBattleBonus"].SetActive(Plugin.EnableChainBattleNerf.Value);
             if (_sliders.ContainsKey("MissionReward")) _sliders["MissionReward"].SetActive(Plugin.EnableMissionRewardNerf.Value);

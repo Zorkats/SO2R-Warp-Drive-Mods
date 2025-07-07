@@ -15,17 +15,19 @@ namespace SO2R_Warp_Drive_Mods
     {   
         public static Plugin Instance { get; private set; }
         internal static ManualLogSource Logger = null!;
-        internal static Harmony _harmonyInstance = null!;
+        public static Harmony _harmonyInstance = null!;
         public static bool DelayedPatchesApplied = false;
 
         // All your ConfigEntry declarations remain here...
-        internal static ConfigEntry<bool> EnablePauseOnFocusLoss, EnableBgmInfo, ShowOncePerSession, EnableMovementMultiplier, EnableAggroRangeMultiplier, EnableDebugMode, EnableNoHealOnLevelUp;
+        internal static ConfigEntry<bool> EnablePauseOnFocusLoss, EnableBgmInfo, ShowOncePerSession, EnableMovementMultiplier, EnableDebugMode, EnableNoHealOnLevelUp;
         internal static ConfigEntry<bool> EnableFormationBonusReset, EnableFormationBonusHalved, EnableFormationBonusHarder, EnableFormationBonusDisable;
         internal static ConfigEntry<bool> EnableChainBattleNerf, EnableChainBattleDisable;
         internal static ConfigEntry<bool> EnableMissionRewardNerf, NerfAllMissionRewards;
-        internal static ConfigEntry<float> MovementSpeedMultiplier, AggroRangeMultiplier, FormationBonusPointMultiplier, ChainBattleBonusMultiplier, MissionRewardMultiplier;
+        internal static ConfigEntry<float> FormationBonusPointMultiplier, ChainBattleBonusMultiplier, MissionRewardMultiplier;
         internal static ConfigEntry<int> HighValueMoneyThreshold, HighValueItemThreshold;
         internal static bool IsBattleActive = false;
+        internal static ConfigEntry<float> MovementSpeedMultiplier;
+        
         
         public override void Load()
         {   
@@ -48,13 +50,6 @@ namespace SO2R_Warp_Drive_Mods
             {
                 Logger.LogError("CRITICAL: Failed to apply GameManager_OnUpdate_CombinedPatch. Mod will not function.");
             }
-            if (EnableMovementMultiplier.Value)
-            {
-                TryApplyPatch(typeof(Patches.Gameplay.PlayerMoveSpeed_Patch), "Player Move Speed Patch");
-                TryApplyPatch(typeof(Patches.Gameplay.FollowerMoveSpeed_Patch), "Follower Move Speed Patch");
-                TryApplyPatch(typeof(Patches.Gameplay.UniversalWalkSpeed_Patch), "Universal Walk Speed Patch");
-            }
-
             
             // Initialize runtime configuration manager
             RuntimeConfigManager.Initialize();
@@ -94,6 +89,14 @@ namespace SO2R_Warp_Drive_Mods
                 if (TryApplyPatch(typeof(Patches.System.MethodFinderPatch), "Method Finder Spy")) successCount++; else failCount++;
                 
                 if (TryApplyPatch(typeof(Patches.UI.FavorabilityGauge_AddNumber_Patch.CatchValuePatch), "Affection Value Catcher")) successCount++; else failCount++;
+                
+                // --- ADD THE SIMPLIFIED MOVEMENT PATCH LOGIC HERE ---
+                if (EnableMovementMultiplier.Value)
+                {
+                    Logger.LogInfo("Applying Movement and Scene Manager Patches...");
+                    if (TryApplyPatch(typeof(Patches.Gameplay.PlayerMoveSpeed_Patch), "Player Speed Patch")) successCount++; else failCount++;
+                    if (TryApplyPatch(typeof(Patches.Gameplay.FollowerMoveSpeed_Patch), "Follower Speed Patch")) successCount++; else failCount++;
+                }
                 
                 // Add the new No Heal on Level Up patch
                 if (EnableNoHealOnLevelUp.Value)
@@ -158,7 +161,7 @@ namespace SO2R_Warp_Drive_Mods
             
             // Gameplay
             EnableMovementMultiplier = Config.Bind("Gameplay", "Enable Movement Speed Multiplier", true, "Enables a multiplier for player movement speed.");
-            //MovementSpeedMultiplier = Config.Bind("Gameplay", "Movement Speed Multiplier", 1.75f, "The multiplier for movement speed. 1.0 is normal, 2.0 is double.");
+            MovementSpeedMultiplier = Config.Bind("Gameplay", "Movement Speed Multiplier", 2f, "The multiplier for movement speed. 1.0 is normal, 2.0 is double.");
             
             // Difficulty Options
             EnableNoHealOnLevelUp = Config.Bind("Difficulty", "Remove Full Heal on Level Up", false, "Disables the full HP/MP restoration that occurs when characters level up, making the game more challenging.");

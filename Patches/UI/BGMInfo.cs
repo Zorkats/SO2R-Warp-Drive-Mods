@@ -38,7 +38,6 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                 var id = GameSoundManager.CurrentBgmID;
                 if (id != _lastID)
                 {
-                    Plugin.Logger.LogInfo($"[BGMInfo] New BGM detected. Old ID: {_lastID}, New ID: {id}");
                     _lastID = id;
 
                     _ctrl.HideCaption(_msgRoot + "Title");
@@ -107,7 +106,6 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
 
                 if (_shown && Time.time >= _hideAt)
                 {
-                    Plugin.Logger.LogInfo("[BGMInfo] Hiding captions due to duration timeout.");
                     if (_ctrl != null)
                     {
                         _ctrl.HideCaption(_msgRoot + "Title");

@@ -12,7 +12,8 @@ namespace SO2R_Warp_Drive_Mods
 {
     public static class RuntimeConfigManager
     {
-        private static bool _isVisible = false;
+        
+        public static bool _isVisible { get; private set; } = false;
         private static GameObject _window;
         private static GameObject _contentPanel;
         private static GameObject _persistentCanvas;
@@ -55,7 +56,77 @@ namespace SO2R_Warp_Drive_Mods
                 Plugin.Logger.LogError($"Failed to initialize runtime config manager: {ex}");
             }
         }
+        
+        private static void InitializeUIComponents()
+        {
+            try
+            {
+                // Force initialization of all toggles by directly manipulating their state
+                foreach (var kvp in _toggles)
+                {
+                    if (kvp.Value != null && kvp.Value)
+                    {
+                        var toggle = kvp.Value.GetComponent<Toggle>();
+                        if (toggle != null)
+                        {
+                            // Force Unity to initialize internal state by accessing properties
+                            bool originalValue = toggle.isOn;
+                            
+                            // Access the graphic components to ensure they're initialized
+                            if (toggle.graphic != null)
+                            {
+                                toggle.graphic.enabled = toggle.graphic.enabled;
+                            }
+                            if (toggle.targetGraphic != null)
+                            {
+                                toggle.targetGraphic.enabled = toggle.targetGraphic.enabled;
+                            }
+                            
+                            // Ensure the toggle's internal state is properly set
+                            toggle.SetIsOnWithoutNotify(originalValue);
+                        }
+                    }
+                }
 
+                // Force initialization of all sliders
+                foreach (var kvp in _sliders)
+                {
+                    if (kvp.Value != null && kvp.Value)
+                    {
+                        var slider = kvp.Value.GetComponentInChildren<Slider>();
+                        if (slider != null)
+                        {
+                            // Force Unity to initialize internal state
+                            float originalValue = slider.value;
+                            
+                            // Access the graphic components to ensure they're initialized
+                            if (slider.fillRect != null)
+                            {
+                                slider.fillRect.anchorMax = slider.fillRect.anchorMax;
+                            }
+                            if (slider.handleRect != null)
+                            {
+                                slider.handleRect.anchoredPosition = slider.handleRect.anchoredPosition;
+                            }
+                            if (slider.targetGraphic != null)
+                            {
+                                slider.targetGraphic.enabled = slider.targetGraphic.enabled;
+                            }
+                            
+                            // Ensure the slider's internal state is properly set
+                            slider.SetValueWithoutNotify(originalValue);
+                        }
+                    }
+                }
+
+                Plugin.Logger.LogInfo("UI components initialized successfully");
+            }
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"Error initializing UI components: {ex}");
+            }
+        }
+        
         private static void CreatePersistentCanvas()
         {
             try
@@ -149,6 +220,7 @@ namespace SO2R_Warp_Drive_Mods
                     CreatePersistentCanvas();
                     if (_persistentCanvas == null) return; // Still failed, abort
                 }
+                if (Keyboard.current == null) return;
 
                 if (Keyboard.current != null && Keyboard.current.f9Key.wasPressedThisFrame)
                 {
@@ -196,8 +268,9 @@ namespace SO2R_Warp_Drive_Mods
                         _isVisible = false;
                     }
                 }
-
-                if (_isVisible && _window != null && _window && Keyboard.current != null)
+                
+                
+                if (_isVisible && _window != null && _window)
                 {
                     HandleInput();
                 }
@@ -219,6 +292,7 @@ namespace SO2R_Warp_Drive_Mods
             try
             {
                 var kb = Keyboard.current;
+                if (kb == null) return;
 
                 if (kb.pageDownKey.wasPressedThisFrame || kb.rightBracketKey.wasPressedThisFrame) PreviousPage();
                 if (kb.pageUpKey.wasPressedThisFrame || kb.leftBracketKey.wasPressedThisFrame) NextPage();
@@ -554,6 +628,7 @@ namespace SO2R_Warp_Drive_Mods
                 contentRect.offsetMax = new Vector2(-25, -100);
 
                 CreateConfigPages(currentFont);
+                InitializeUIComponents();
 
                 Plugin.Logger.LogInfo("Runtime config window created successfully.");
             }
@@ -721,7 +796,7 @@ namespace SO2R_Warp_Drive_Mods
                 toggle.graphic = checkImage;
                 toggle.isOn = config.Value;
                 toggle.interactable = false;
-
+                
                 // The Label is a sibling of the checkbox container and will align next to it.
                 var labelObj = new GameObject("Label");
                 labelObj.transform.SetParent(toggleObj.transform, false);
@@ -838,7 +913,7 @@ namespace SO2R_Warp_Drive_Mods
                 slider.maxValue = max;
                 slider.value = config.Value;
                 slider.interactable = false;
-
+                
                 _sliders[key] = sliderCell;
                 _sliderLabels[key] = labelText;
             }
@@ -891,3 +966,4 @@ namespace SO2R_Warp_Drive_Mods
         }
     }
 }
+

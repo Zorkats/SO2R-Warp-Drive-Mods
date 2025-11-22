@@ -12,7 +12,6 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
         public string title    { get; set; } = "";
         public string composer { get; set; } = "";
         public int    track    { get; set; }
-        public string album    { get; set; } = "";
     }
 
     static class BgmNameLoader

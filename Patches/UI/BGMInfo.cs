@@ -64,7 +64,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                     float marginX = 95f;
                     float marginXBattle = 400f;
                     float marginY = 40f;
-                    float marginXDetails = -1500f;
+                    float marginXDetails = -1700f;
                     float marginXDetailsBattle = 400f;
                     float charPx = 16f;
 
@@ -95,8 +95,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.UI
                     {
                         string composer = meta.composer ?? "";
                         int track = meta.track;
-                        string album = meta.album ?? "";
-                        string details = $"<size=60%>Track {track:D2}, {composer}, {album}</size>";
+                        string details = $"<size=70%>Track {track:D2}, {composer}</size>";
                         _ctrl.ShowCaption(details, posDetails + new Vector2(0, -35), _msgRoot + "Details");
                     }
 

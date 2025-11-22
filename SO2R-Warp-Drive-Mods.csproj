@@ -99,7 +99,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Patches\Diagnostics\" />
+      <Folder Include="Patches\Debug\" />
     </ItemGroup>
 
 </Project>

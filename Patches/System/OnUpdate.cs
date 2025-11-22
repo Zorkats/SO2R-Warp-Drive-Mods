@@ -11,7 +11,6 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
     {
         private const float PATCH_DELAY_SECONDS = 3.0f;
         private static float _timeSinceLoad = 0f;
-
         static void Postfix()
         {
             
@@ -19,6 +18,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
             {
                 UI.BgmCaptionPatch.Postfix();
             }
+            
             // First, handle the delayed patching logic.
             if (!Plugin.DelayedPatchesApplied)
             {

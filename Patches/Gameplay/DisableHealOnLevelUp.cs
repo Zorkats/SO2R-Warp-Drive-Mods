@@ -1,5 +1,6 @@
 using HarmonyLib;
 using Game;
+using System;
 
 namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
 {
@@ -13,53 +14,81 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
     }
 
     /// <summary>
-    /// This patch wraps the IncreaseExperience method to set our flag.
-    /// This is a safe, non-battle-related hook.
+    /// FIX: Changed target to GameManager.IncreaseExperience.
+    /// This method exists in GameManager.cs and handles XP calculation.
     /// </summary>
-    [HarmonyPatch(typeof(BattleResultInfo), nameof(BattleResultInfo.BattleResultCharacterData.increaseExp))]
+    [HarmonyPatch(typeof(GameManager), nameof(GameManager.IncreaseExperience))]
     public static class ExperiencePatch
     {
         // Before the method runs, set the flag to true.
         [HarmonyPrefix]
-        public static void SetLevelUpFlag()
+        public static void Prefix()
         {
-            Plugin.Logger.LogInfo("[NoHealOnLevelUp] IncreaseExperience started, setting level-up flag.");
             LevelUpState.IsProcessingLevelUp = true;
         }
 
         // After the method finishes (even if it errors), ensure the flag is reset.
         [HarmonyFinalizer]
-        public static void UnsetLevelUpFlag()
+        public static void Finalizer()
         {
-            Plugin.Logger.LogInfo("[NoHealOnLevelUp] IncreaseExperience finished, clearing level-up flag.");
             LevelUpState.IsProcessingLevelUp = false;
         }
     }
 
     /// <summary>
-    /// This patch now uses the temporary flag to block heals only during a level-up.
-    /// It is completely independent of the battle system and BattleResultInfo.
+    /// This patch uses the temporary flag to block heals only during a level-up.
     /// </summary>
-    [HarmonyPatch(typeof(GameManager), nameof(BattleResultInfo.BattleResultCharacterData.preLevel))]
-    [HarmonyPatch(typeof(GameManager), nameof(BattleResultInfo.BattleResultCharacterData.levelUpCount))]
-    [HarmonyPatch(typeof(GameManager), nameof(BattleResultInfo.BattleResultCharacterData.recoverHitPoint))]
-    [HarmonyPatch(typeof(GameManager), nameof(BattleResultInfo.BattleResultCharacterData.recoverMentalPoint))]
     public static class NoHealOnLevelUpPatch
     {
-        [HarmonyPrefix]
-        public static bool PreventHeal()
+        // Helper to check config and state
+        private static bool ShouldBlockHeal()
         {
-            if (!Plugin.EnableNoHealOnLevelUp.Value) return true;
-
-            // ONLY block the heal if our flag is true.
-            if (LevelUpState.IsProcessingLevelUp)
+            if (Plugin.EnableNoHealOnLevelUp.Value && LevelUpState.IsProcessingLevelUp)
             {
-                Plugin.Logger.LogInfo("[NoHealOnLevelUp] RecoverAll was called during level-up process. Blocking heal.");
-                return false; // This blocks the heal.
+                // Plugin.Logger.LogInfo("[NoHeal] Heal blocked during level up.");
+                return false; // Skip the original heal method
             }
+            return true; // Allow the original heal method
+        }
 
-            // Otherwise, allow the heal to happen (for inns, items, etc.).
-            return true;
+        // Patch 1: RecoverAll(bool isResurrection)
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.RecoverAll))]
+        [HarmonyPrefix]
+        public static bool Prefix_RecoverAll()
+        {
+            return ShouldBlockHeal();
+        }
+
+        // Patch 2: RecoverHitPoint(int recoverValue, bool isResurrection)
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.RecoverHitPoint), new Type[] { typeof(int), typeof(bool) })]
+        [HarmonyPrefix]
+        public static bool Prefix_RecoverHitPoint_Int()
+        {
+            return ShouldBlockHeal();
+        }
+
+        // Patch 3: RecoverHitPoint(float recoverRate, bool isResurrection)
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.RecoverHitPoint), new Type[] { typeof(float), typeof(bool) })]
+        [HarmonyPrefix]
+        public static bool Prefix_RecoverHitPoint_Float()
+        {
+            return ShouldBlockHeal();
+        }
+
+        // Patch 4: RecoverMentalPoint(int recoverValue)
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.RecoverMentalPoint), new Type[] { typeof(int) })]
+        [HarmonyPrefix]
+        public static bool Prefix_RecoverMentalPoint_Int()
+        {
+            return ShouldBlockHeal();
+        }
+
+        // Patch 5: RecoverMentalPoint(float recoverRate)
+        [HarmonyPatch(typeof(GameManager), nameof(GameManager.RecoverMentalPoint), new Type[] { typeof(float) })]
+        [HarmonyPrefix]
+        public static bool Prefix_RecoverMentalPoint_Float()
+        {
+            return ShouldBlockHeal();
         }
     }
 }

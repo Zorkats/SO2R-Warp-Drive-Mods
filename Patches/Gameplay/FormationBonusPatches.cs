@@ -7,7 +7,8 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
     public static class FormationBonusPatches
     {
         // Patch 1: Reset formation bonuses at the start of each battle
-        [HarmonyPatch(typeof(BattleManager), "StartBattle")]
+        // FIX: Specified 'new Type[] { }' to explicitly target the parameterless StartBattle() overload.
+        [HarmonyPatch(typeof(BattleManager), "StartBattle", new Type[] { })]
         public static class BattleManager_StartBattle_FormationReset
         {
             [HarmonyPostfix]
@@ -16,10 +17,10 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 try
                 {
                     if (!Plugin.EnableFormationBonusReset.Value) return;
-                    
+
                     // Reset the bonus gauge when battle starts
                     __instance.ResetBonusGauge(true);
-                    
+
                     if (Plugin.EnableDebugMode.Value)
                     {
                         Plugin.Logger.LogInfo("FormationBonus: Reset bonus gauge at battle start");
@@ -31,7 +32,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 }
             }
         }
-        
+
         // Patch 2: Halve the effectiveness of formation bonuses
         [HarmonyPatch(typeof(BattleManager), "GetSphereBonusBuffValueCache")]
         public static class BattleManager_GetSphereBonusBuffValueCache_Halve
@@ -42,15 +43,10 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 try
                 {
                     if (!Plugin.EnableFormationBonusHalved.Value) return;
-                    
+
                     // Halve the bonus value
                     float originalValue = __result;
                     __result *= 0.5f;
-                    
-                    if (Plugin.EnableDebugMode.Value)
-                    {
-                        Plugin.Logger.LogInfo($"FormationBonus: Halved bonus value from {originalValue} to {__result}");
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -58,7 +54,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 }
             }
         }
-        
+
         // Patch 3: Make formation bonuses harder to acquire by reducing sphere points
         [HarmonyPatch(typeof(BattleManager), "IncreaseSphereBonusPoint")]
         public static class BattleManager_IncreaseSphereBonusPoint_Harder
@@ -69,20 +65,15 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 try
                 {
                     if (!Plugin.EnableFormationBonusHarder.Value) return;
-                    
+
                     // Apply the point multiplier
                     int originalValue = value;
                     value = (int)(value * Plugin.FormationBonusPointMultiplier.Value);
-                    
+
                     // Ensure at least 1 point if original was positive
                     if (originalValue > 0 && value <= 0)
                     {
                         value = 1;
-                    }
-                    
-                    if (Plugin.EnableDebugMode.Value)
-                    {
-                        Plugin.Logger.LogInfo($"FormationBonus: Modified sphere points from {originalValue} to {value}");
                     }
                 }
                 catch (Exception ex)
@@ -91,7 +82,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 }
             }
         }
-        
+
         // Patch 4: Completely disable formation bonuses
         [HarmonyPatch(typeof(BattleManager), "OnGetBonusSphere")]
         public static class BattleManager_OnGetBonusSphere_Disable
@@ -102,13 +93,8 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 try
                 {
                     if (!Plugin.EnableFormationBonusDisable.Value) return true;
-                    
+
                     // Return false to skip the original method entirely
-                    if (Plugin.EnableDebugMode.Value)
-                    {
-                        Plugin.Logger.LogInfo("FormationBonus: Blocked sphere collection (system disabled)");
-                    }
-                    
                     return false;
                 }
                 catch (Exception ex)
@@ -118,8 +104,9 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 }
             }
         }
-        
+
         // Additional patch to prevent bonus gauge from functioning when disabled
+        // Note: We use a separate class name here to distinguish from Patch 2
         [HarmonyPatch(typeof(BattleManager), "GetSphereBonusBuffValueCache")]
         public static class BattleManager_GetSphereBonusBuffValueCache_Disable
         {
@@ -129,14 +116,8 @@ namespace SO2R_Warp_Drive_Mods.Patches.Gameplay
                 try
                 {
                     if (!Plugin.EnableFormationBonusDisable.Value) return;
-                    
                     // Return 0 for all bonus values when system is disabled
                     __result = 0f;
-                    
-                    if (Plugin.EnableDebugMode.Value)
-                    {
-                        Plugin.Logger.LogInfo("FormationBonus: Returned 0 bonus value (system disabled)");
-                    }
                 }
                 catch (Exception ex)
                 {

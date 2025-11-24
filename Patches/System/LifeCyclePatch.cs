@@ -3,6 +3,8 @@ using Game;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using SO2R_Warp_Drive_Mods.Patches.UI;
+using SO2R_Warp_Drive_Mods.Patches.Gameplay;
+using SO2R_Warp_Drive_Mods.Patches.Debug;
 using System;
 using Common;
 
@@ -10,136 +12,129 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
 {
     public static class LifeCyclePatch
     {
-        // Track the scene name manually
         private static string _lastSceneName = "";
         private static bool _hasInitialized = false;
+        private static bool _isEngineReady = false;
 
-        // 1. Hook into GameManager.OnInitialize just to log that we are alive
+        public static bool IsPausedByFocus { get; private set; } = false;
+
         [HarmonyPatch(typeof(GameManager), "OnInitialize")]
         [HarmonyPostfix]
         public static void OnGameInitialize_Postfix()
         {
-            Plugin.Logger.LogInfo("[LifeCycle] GameManager initialized (Boot). Waiting for Title Screen...");
-            // DO NOT apply gameplay patches here. It is too early and causes crashes.
+            Plugin.Logger.LogInfo("[LifeCycle] Boot.");
+            Application.runInBackground = true;
         }
 
-        // 2. Called manually from our Update loop when the scene changes
         private static void OnSceneLoaded(Scene scene)
         {
             try
             {
                 string sceneName = scene.name;
-                Plugin.Logger.LogInfo($"[LifeCycle] Scene Loaded: {sceneName}");
-
-                // IGNORE BootScene. Waiting for it to finish prevents the crash.
                 if (sceneName == "BootScene" || sceneName == "Entry")
                 {
+                    _isEngineReady = false;
                     return;
                 }
 
-                // Perform First-Time Initialization if we hit a real scene (like TitleScene)
+                _isEngineReady = true;
+                // Removed BattleActive set here, handled by Polling
+
                 if (!_hasInitialized)
                 {
-                    Plugin.Logger.LogInfo("[LifeCycle] Valid scene loaded. Initializing Mod Systems...");
                     Plugin.Instance.ApplyGameplayPatches();
                     _hasInitialized = true;
                 }
 
-                // Check if we are in battle
-                Plugin.IsBattleActive = (sceneName == "Battle");
-
-                // Refresh UI resources (Find new Canvas/Font)
                 RuntimeConfigManager.RefreshResources();
+                if (Plugin.EnableBgmInfo.Value) BgmCaptionPatch.ForceRefresh();
             }
-            catch (Exception ex)
-            {
-                Plugin.Logger.LogError($"[LifeCycle] Error during Scene Loaded: {ex}");
-            }
+            catch {}
         }
 
-        // 3. Global Update Hook
         [HarmonyPatch(typeof(GameManager), "OnUpdate")]
         [HarmonyPostfix]
         public static void OnGameUpdate_Postfix()
         {
-            // --- Scene Polling Logic ---
             try
             {
                 Scene currentScene = SceneManager.GetActiveScene();
                 if (currentScene.IsValid() && currentScene.name != _lastSceneName)
                 {
                     _lastSceneName = currentScene.name;
-                    // Only trigger load logic if the scene name is valid
-                    if (!string.IsNullOrEmpty(_lastSceneName))
-                    {
-                        OnSceneLoaded(currentScene);
-                    }
+                    if (!string.IsNullOrEmpty(_lastSceneName)) OnSceneLoaded(currentScene);
                 }
             }
             catch {}
 
-            // Only run the rest if we have actually initialized
-            if (!_hasInitialized) return;
+            if (Plugin.EnableBgmInfo.Value) BgmCaptionPatch.Update();
 
-            // Handle Input for Config
-            if (Plugin.IsPatchesApplied)
+            if (_hasInitialized && _isEngineReady)
             {
                 RuntimeConfigManager.Update();
                 AffectionEditor.Update();
+                Plugin.IsMenuOpen = RuntimeConfigManager.IsVisible || AffectionEditor.IsVisible;
 
-                if (Plugin.EnableBgmInfo.Value)
-                {
-                    BgmCaptionPatch.Update();
-                }
+                // Polling Logic (EXP/Fol/Enemies)
+                PollingGameplayPatch.Update();
+
+                if (Plugin.EnableDebugMode.Value) DeepStateLogger.Update();
             }
 
-            // Handle Pause on Focus Loss Logic
-            if (Plugin.EnablePauseOnFocusLoss.Value)
+            if (Plugin.EnablePauseOnFocusLoss.Value) HandleFocusLoss();
+        }
+
+        [HarmonyPatch(typeof(GameInputManager), "OnLateUpdate")]
+        [HarmonyPostfix]
+        public static void OnInputLateUpdate_Postfix()
+        {
+            if (Plugin.IsMenuOpen || IsPausedByFocus)
             {
-                HandleFocusLoss();
+                if (Time.timeScale != 0f) Time.timeScale = 0f;
             }
         }
 
         private static bool _wasFocused = true;
-        private static bool _wePaused = false;
+        private static int _restoreVolume = 100;
 
         private static void HandleFocusLoss()
         {
-            // Safety: Don't pause if game manager isn't ready
             if (GameManager.Instance == null) return;
 
             bool isFocused = Application.isFocused;
             if (isFocused == _wasFocused) return;
 
-            if (!isFocused && !_wePaused)
+            if (!isFocused)
             {
+                IsPausedByFocus = true;
                 try
                 {
                     GameManager.OnChangePauseStatusCallback(PauseStatus.System);
                     if (GameSoundManager.Instance != null)
                     {
                         GameSoundManager.Instance.PauseAllEnvSound();
-                        if (GameSoundManager.CurrentBgmID != BgmID.INVALID)
-                            GameSoundManager.PauseBgm(GameSoundManager.CurrentBgmID, true);
+                        GameSoundManager.ChangeMasterVolume(0);
                     }
-                    _wePaused = true;
-                    Plugin.Logger.LogInfo("Game paused (Focus Loss)");
+                    AudioListener.pause = true;
+                    Time.timeScale = 0f;
+                    Application.runInBackground = false;
                 }
                 catch {}
             }
-            else if (isFocused && _wePaused)
+            else
             {
+                IsPausedByFocus = false;
                 try
                 {
-                    GameManager.OnChangePauseStatusCallback(PauseStatus.None);
+                    Application.runInBackground = true;
+                    Time.timeScale = 1f;
+                    AudioListener.pause = false;
                     if (GameSoundManager.Instance != null)
                     {
                         GameSoundManager.Instance.ResumeAllEnvSound();
-                        if (GameSoundManager.CurrentBgmID != BgmID.INVALID)
-                            GameSoundManager.PauseBgm(GameSoundManager.CurrentBgmID, false);
+                        GameSoundManager.ChangeMasterVolume(_restoreVolume);
                     }
-                    _wePaused = false;
-                    Plugin.Logger.LogInfo("Game resumed (Focus Regained)");
+                    GameManager.OnChangePauseStatusCallback(PauseStatus.None);
                 }
                 catch {}
             }

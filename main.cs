@@ -46,6 +46,7 @@ namespace SO2R_Warp_Drive_Mods
             {
                 _harmonyInstance.PatchAll(typeof(LifeCyclePatch));
                 _harmonyInstance.PatchAll(typeof(InputBlocker));
+                _harmonyInstance.PatchAll(typeof(BattleStatsPatch));
 
             }
             catch (System.Exception ex) { Logger.LogError($"System Patch Failed: {ex}"); }

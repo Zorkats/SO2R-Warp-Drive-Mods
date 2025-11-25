@@ -38,7 +38,14 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
                 }
 
                 _isEngineReady = true;
-                // Removed BattleActive set here, handled by Polling
+
+                // Reset battle-related state when leaving battle scenes
+                if (!sceneName.Contains("Battle"))
+                {
+                    BattleRewardsPatch.ResetState();
+                    LevelUpNoHealPatch.ClearCache();
+                    EnemyStatBuffPatch.ClearCache();
+                }
 
                 if (!_hasInitialized)
                 {
@@ -49,7 +56,10 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
                 RuntimeConfigManager.RefreshResources();
                 if (Plugin.EnableBgmInfo.Value) BgmCaptionPatch.ForceRefresh();
             }
-            catch {}
+            catch (Exception ex)
+            {
+                Plugin.Logger.LogError($"[LifeCycle] OnSceneLoaded error: {ex.Message}");
+            }
         }
 
         [HarmonyPatch(typeof(GameManager), "OnUpdate")]
@@ -58,6 +68,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
         {
             try
             {
+                // Scene change detection
                 Scene currentScene = SceneManager.GetActiveScene();
                 if (currentScene.IsValid() && currentScene.name != _lastSceneName)
                 {
@@ -65,22 +76,29 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
                     if (!string.IsNullOrEmpty(_lastSceneName)) OnSceneLoaded(currentScene);
                 }
             }
-            catch {}
+            catch { }
 
+            // BGM Info update
             if (Plugin.EnableBgmInfo.Value) BgmCaptionPatch.Update();
 
+            // UI and Config updates
             if (_hasInitialized && _isEngineReady)
             {
                 RuntimeConfigManager.Update();
                 AffectionEditor.Update();
                 Plugin.IsMenuOpen = RuntimeConfigManager.IsVisible || AffectionEditor.IsVisible;
 
-                // Polling Logic (EXP/Fol/Enemies)
-                PollingGameplayPatch.Update();
+                // No Heal on Level Up (polling-based)
+                LevelUpNoHealPatch.Update();
 
+                // Enemy stat buffing (polling for newly spawned enemies)
+                EnemyStatBuffPatch.Update();
+
+                // Debug logger
                 if (Plugin.EnableDebugMode.Value) DeepStateLogger.Update();
             }
 
+            // Focus loss handling
             if (Plugin.EnablePauseOnFocusLoss.Value) HandleFocusLoss();
         }
 
@@ -107,6 +125,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
             if (!isFocused)
             {
                 IsPausedByFocus = true;
+                Plugin.IsFocusLost = true;
                 try
                 {
                     GameManager.OnChangePauseStatusCallback(PauseStatus.System);
@@ -119,11 +138,12 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
                     Time.timeScale = 0f;
                     Application.runInBackground = false;
                 }
-                catch {}
+                catch { }
             }
             else
             {
                 IsPausedByFocus = false;
+                Plugin.IsFocusLost = false;
                 try
                 {
                     Application.runInBackground = true;
@@ -136,7 +156,7 @@ namespace SO2R_Warp_Drive_Mods.Patches.System
                     }
                     GameManager.OnChangePauseStatusCallback(PauseStatus.None);
                 }
-                catch {}
+                catch { }
             }
             _wasFocused = isFocused;
         }
